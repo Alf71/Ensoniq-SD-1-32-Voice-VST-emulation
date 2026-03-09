@@ -2,7 +2,7 @@
 MAME®-based emulation of the Ensoniq® SD-1 32 voices version synthesizer with JUCE® VST3 
 
 # Ensoniq® SD-1
-The SD-1 comes from a long line of Ensoniq®'s evolving Transwave® wavetable digital synthesizers. It began with Ensoniq®'s earliest synthesizer, the ESQ-1. That led to the SQ-80, then the VFX and VFX-SD (the latter featuring an on-board sequencer) and then to the SD-1 (and it eventually led to the Fizmo). The SD-1 allows for additive synthesis using waveform modulation, a sort of wavetable synthesis. This puts it into a unique class of digital synthesizers along with the PPG Wave® series and Waldorf® Microwave® series.
+The SD-1 (1990) comes from a long line of Ensoniq®'s evolving Transwave® wavetable digital synthesizers. It began with Ensoniq®'s earliest synthesizer, the ESQ-1. That led to the SQ-80, then the VFX and VFX-SD (the latter featuring an on-board sequencer) and then to the SD-1 (and it eventually led to the Fizmo®). The SD-1 allows for additive synthesis using waveform modulation, a sort of wavetable synthesis. This puts it into a unique class of digital synthesizers along with the PPG Wave® series and Waldorf® Microwave® series.
 
 The SD-1 can create all sorts of acoustic, electric, digital, and analog-like sounds. Its piano sound has over 1 MB of 16-bit waveforms to give it a full and rich realistic tone not found in other digital synthesizers of the time.
 
