@@ -2,7 +2,7 @@
 MAME®-based emulation of the Ensoniq® SD-1 32 voices version synthesizer with JUCE® VST3 
 
 # Ensoniq® SD-1
-The SD-1 comes from a long line of Ensoniq®'s evolving Transwave® wavetable digital synthesizers. It began with Ensoniq's earliest synthesizer, the ESQ-1. That led to the SQ-80, then the VFX and VFX-SD (the latter featuring an on-board sequencer) and then to the SD-1 (and it eventually led to the Fizmo). The SD-1 allows for additive synthesis using waveform modulation, a sort of wavetable synthesis. This puts it into a unique class of digital synthesizers along with the PPG Wave® series and Waldorf® Microwave® series.
+The SD-1 comes from a long line of Ensoniq®'s evolving Transwave® wavetable digital synthesizers. It began with Ensoniq®'s earliest synthesizer, the ESQ-1. That led to the SQ-80, then the VFX and VFX-SD (the latter featuring an on-board sequencer) and then to the SD-1 (and it eventually led to the Fizmo). The SD-1 allows for additive synthesis using waveform modulation, a sort of wavetable synthesis. This puts it into a unique class of digital synthesizers along with the PPG Wave® series and Waldorf® Microwave® series.
 
 The SD-1 can create all sorts of acoustic, electric, digital, and analog-like sounds. Its piano sound has over 1 MB of 16-bit waveforms to give it a full and rich realistic tone not found in other digital synthesizers of the time.
 
@@ -10,7 +10,7 @@ A single patch can contain up to 6 of the 168 waves in its ROM memory that can b
 Like the VFX-SD, the SD-1 has a professional quality on-board sequencer making it a complete all-in-one music production workstation. This is a 24-track sequencer with 25,000 note capacity and it holds up to 60 sequences and 20 songs. There is quantization (96 ppqn), real-time or step entry, looped or linear mode, and auto-punch in/out. Tracks can be set to control the SD-1's internal voices or external MIDI equipment, or both at the same time! An on-board 3.5" disk drive allows you to store your programs, sequences, songs, and even MIDI SysEx data. The SD-1 is compatible with all VFX and VFX-SD program librarys too!
 
 # What's working?
-Everything!
+Everything.
 
 # Features:
 - Intel® Windows® / Mac Intel®+ARM® universal binaries
@@ -18,13 +18,17 @@ Everything!
 - Loading all compatible VFX/VFX-SD/SD1-24/SD1-32 disk images and cartridges (.img .bin .crt etc) Attach the disk image with Load Floppy/Cartridge, Press Storage, then select DISK. Press LOAD. The display shows the Disk Load page, with the File Type selected. Move the data entry slider to select file.
 
 # Known limitations
-- Only 1 instance can be run simultaneous!
+- Only 1 instance can be run simultaneous! - yet
+
+- Aux (dry) outputs not implemented - yet
 
 - No window resizing, only 1600x720 resolution - yet
 
 - Only the Compact panel view implemented - yet
 
-- Macos binaries requires one of the following methods to run:
+- No floppy drive sound :D
+
+- Mac binaries requires one of the following methods to run:
   - Manual authorization: The user must go to System Preferences > Privacy and Security and, after the DAW has attempted to load the plugin, click the "Open Anyway" button.
   - or
   - Removing quarantine (from Terminal): The user must run the following command on the plugin folder:
@@ -33,8 +37,9 @@ Everything!
 # Requirements
 - Original SD-1 32 rom files at these location (can be zipped into sd1.zip):
 
-  Windows 
-  Macos /Users/yourusername/Documents/EnsoniqSD1
+  Windows®
+  
+  Mac /Users/yourusername/Documents/EnsoniqSD1
   
   Filename | SHA256
   - esqvfd_font_vfx.bin ab2f7ddc6ab7fafaf07985d01788197849cdaeb5a4a7d9f2f85098dfd65edf01
