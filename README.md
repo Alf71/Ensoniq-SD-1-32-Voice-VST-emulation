@@ -12,7 +12,7 @@ A single patch can contain up to 6 of the 168 waves in its ROM memory that can b
 Like the VFX-SD, the SD-1 has a professional quality on-board sequencer making it a complete all-in-one music production workstation. This is a 24-track sequencer with 25,000 note capacity and it holds up to 60 sequences and 20 songs. There is quantization (96 ppqn), real-time or step entry, looped or linear mode, and auto-punch in/out. Tracks can be set to control the SD-1's internal voices or external MIDI equipment, or both at the same time! An on-board 3.5" disk drive allows you to store your programs, sequences, songs, and even MIDI SysEx data. The SD-1 is compatible with all VFX and VFX-SD program librarys too!
 
 # What's working?
-Everything.
+Everything. Check the original manual here: [Polynominal](https://www.polynominal.com/ensoniq-sd1/ensoniq-sd1-manual.pdf)
 
 # Features:
 - Intel® Windows® / Mac Intel®+ARM® universal binaries
@@ -21,19 +21,15 @@ Everything.
 
 # Known limitations
 - Only 1 instance can be run simultaneous.
-
 - No window resizing, only 1600x720 resolution - yet
-
 - Only the Compact panel view implemented - yet
-
 - No floppy drive sound :D
-
 - Mac binaries requires one of the following methods to run:
   - Manual authorization: The user must go to System Preferences > Privacy and Security and, after the DAW has attempted to load the plugin, click the "Open Anyway" button.
   - or
   - Removing quarantine (from Terminal): The user must run the following command on the plugin folder:
   sudo xattr -rd com.apple.quarantine /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3
-  - You must codesign the vst3 file: sudo codesign -f -s - /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3
+  - Finally codesign the vst3 file: sudo codesign -f -s - /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3
 
 # Requirements
 - Windows® 10 or newer / MacOS14 Ventura or newer, VST3 compatible DAW
@@ -61,7 +57,7 @@ Everything.
 
 Built with love by Christian Brunschen and sojusrecords.com
 
-MAME® Legal Information
+MAME® Legal Information<br/>
 Disclaimer
 
 The source code to MAME® is provided under the GNU General Public License version 2 or later as of Git revision 35ccf865aa366845b574e1fdbc71c4866b3d6a0f and the release of MAME 0.172. Source files may also be licensed as specified in the file header. This license does not apply to prior versions of MAME. 
@@ -89,4 +85,4 @@ SD-1 Emulation license: BSD 3 Clause | Copyright (c) Christian Brunschen
 
 All trademarks are property of their respective owners.
 
-https://www.sojusrecords.com
+Visit https://www.sojusrecords.com
