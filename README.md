@@ -21,15 +21,12 @@ Everything. Check the original manual here: [Polynominal](https://www.polynomina
 
 # Known limitations
 - Only 1 instance can be run simultaneous.
-- No window resizing, only 1600x720 resolution - yet
-- Only the Compact panel view implemented - yet
 - No floppy drive sound :D
 - Mac binaries requires one of the following methods to run:
   - Manual authorization: The user must go to System Preferences > Privacy and Security and, after the DAW has attempted to load the plugin, click the "Open Anyway" button.
   - or
   - Removing quarantine (from Terminal): The user must run the following command on the plugin folder:
   sudo xattr -rd com.apple.quarantine /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3
-  - Finally codesign the vst3 file: sudo codesign -f -s - /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3
 
 # Requirements
 - Windows® 10 or newer / MacOS14 Ventura or newer, VST3 compatible DAW
