@@ -36,11 +36,12 @@ Everything.
   - You must codesign the vst3 file: sudo codesign -f -s - /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3
 
 # Requirements
-- Original SD-1 32 rom files at these location (can be zipped into sd1.zip):
+- Windows® 10 or newer / MacOS14 Ventura or newer, VST3 compatible DAW
+- Original SD-1 32 rom files at this location (can be zipped into sd1.zip):
 
-  Windows®
+  Windows®: 
   
-  Mac /Users/yourusername/Documents/EnsoniqSD1
+  Mac: /Users/yourusername/Documents/EnsoniqSD1
   
   Filename | SHA256
   - esqvfd_font_vfx.bin ab2f7ddc6ab7fafaf07985d01788197849cdaeb5a4a7d9f2f85098dfd65edf01
