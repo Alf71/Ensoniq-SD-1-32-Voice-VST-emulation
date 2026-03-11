@@ -19,7 +19,7 @@ We are Sojus Records, one of the longest-running netlabels still active. We are 
 Everything. Check the original manual here: [Polynominal](https://www.polynominal.com/ensoniq-sd1/ensoniq-sd1-manual.pdf)
 
 # Features:
-- Intel Windows / Mac Intel+ARM universal binaries
+- Mac Intel+ARM universal binaries (Intel Windows build is in progress)
 - VST3 state saving, midi input and automation, 4 different panels, resizeable gui with VFD display and onboard keyboard
 - Can load all compatible VFX/VFX-SD/SD1-24/SD1-32 disk images and cartridges (.img .bin .crt etc)
   - Attach the disk image with Load Floppy/Cartridge button, Press Storage, then select DISK. Press LOAD. The display shows the Disk Load page, with the File Type selected. Move the data entry slider to select file.
@@ -34,7 +34,7 @@ Everything. Check the original manual here: [Polynominal](https://www.polynomina
   sudo xattr -rd com.apple.quarantine /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3
 
 # Requirements
-- Windows 10 or newer / MacOS14 Ventura or newer, VST3 compatible DAW
+- MacOS14 Ventura or newer (Windows 10 or newer when it's ready), VST3 compatible DAW
 - Original SD-1 32 rom files at this location (can be zipped into sd1.zip):
 
   Windows: 
