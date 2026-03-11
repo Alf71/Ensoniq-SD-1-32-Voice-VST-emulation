@@ -57,4 +57,15 @@ Because macOS Sequoia and strict DAW sandboxing block dynamic external library l
 Due to copyright reasons, the Ensoniq ROM files are **not** included in this repository. 
 1. Once built, open the plugin in your DAW. 
 2. A warning screen will appear showing you the correct path (e.g., `~/Documents/EnsoniqSD1/`).
-3. Place your `sd132.zip` ROM file into that directory and reload the plugin.
+3. Place original Ensoniq SD-1 32 variant AND Ensoniq 2x40 VFD rom files into that directory and reload the plugin (can be sd132.zip)
+  - Filename | SHA256
+  - esqvfd_font_vfx.bin ab2f7ddc6ab7fafaf07985d01788197849cdaeb5a4a7d9f2f85098dfd65edf01
+  - sd1_32_402_hi.bin 90ae35de8661f5de0793b6ea59a4d6524e90c0828a29e6ea8906ff759116136d
+  - sd1_32_402_lo.bin 6b0c1235c4f813ce8698e89d66933e9c7c9168f4a095c9e2a50add7fe729481c
+  - sd1_410_hi.bin 1d6d6150373fb070da8b1a6da57762749bda9210e0ca5536441bb8194a3cafb7
+  - sd1_410_lo.bin e3e42beca41989561c0d2a8266e48549561650a7606bb8a0d75b438847e8bd0c
+  - u34.bin 7a6e6e76da7eb8de5cbc3a0a2bfb27a461e312facdcc0b7ecc42b9d1eb261e12
+  - u35.bin 1df911a97e0e5a334d9345ba5e47eac7794d083282012f7ecf70901b88cf7e08
+  - u36.bin 2fdb401bea78eb323fa55408760a73319aeae68b465f193dc7a46d1b21277cdd
+  - u37.bin e08931013c8aca2460b4f2c3512e1d3e9a610a7f921e22012bb13bd23a3e56d7
+  - u38.bin 2f185a185961a1c14472c2b706642c0d9e7a0792d57d946a349840905782e5ca

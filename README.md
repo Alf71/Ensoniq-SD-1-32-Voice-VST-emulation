@@ -35,7 +35,7 @@ Everything. Check the original manual here: [Polynominal](https://www.polynomina
 
 # Requirements
 - MacOS14 Ventura or newer (Windows 10 or newer when it's ready), VST3 compatible DAW
-- Original SD-1 32 rom files at this location (can be zipped into sd1.zip):
+- Original Ensoniq SD-1 32 variant AND Ensoniq 2x40 VFD rom files at this location (can be zipped into sd132.zip):
 
   Windows: 
   
