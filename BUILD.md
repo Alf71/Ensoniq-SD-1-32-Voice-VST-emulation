@@ -1,4 +1,4 @@
-# Build Instructions for Ensoniq SD-1 VST
+# Build Instructions for Ensoniq SD-1 32-Voice VST
 
 This project embeds a headless MAME emulation engine inside a JUCE VST3 plugin container to perfectly recreate the Ensoniq SD-1 synthesizer. 
 
