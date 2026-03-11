@@ -4,20 +4,24 @@ MAME®-based emulation of the Ensoniq® SD-1 32 voices version synthesizer with 
 ![Screenshot of Ensoniq SD-1 VST](https://github.com/kukoricajoe/Ensoniq-SD-1-32-voices-VST-emulation/blob/main/sd1.png)
 
 # Ensoniq® SD-1
-The SD-1 (1990) comes from a long line of Ensoniq®'s evolving Transwave® wavetable digital synthesizers. It began with Ensoniq®'s earliest synthesizer, the ESQ-1. That led to the SQ-80, then the VFX and VFX-SD (the latter featuring an on-board sequencer) and then to the SD-1 (and it eventually led to the Fizmo®). The SD-1 allows for additive synthesis using waveform modulation, a sort of wavetable synthesis. This puts it into a unique class of digital synthesizers along with the PPG Wave® series and Waldorf® Microwave® series.
+The SD-1 (1990-) comes from a long line of Ensoniq®'s evolving Transwave® wavetable digital synthesizers. It began with Ensoniq®'s earliest synthesizer, the ESQ-1. That led to the SQ-80, then the VFX and VFX-SD (the latter featuring an on-board sequencer) and then to the SD-1 (and it eventually led to the Fizmo®). The SD-1 allows for additive synthesis using waveform modulation, a sort of wavetable synthesis. This puts it into a unique class of digital synthesizers along with the PPG Wave® series and Waldorf® Microwave® series.
 
 The SD-1 can create all sorts of acoustic, electric, digital, and analog-like sounds. Its piano sound has over 1 MB of 16-bit waveforms to give it a full and rich realistic tone not found in other digital synthesizers of the time.
 
 A single patch can contain up to 6 of the 168 waves in its ROM memory that can be combined and layered. Advanced and analog-like synth parameters including its dual multi-mode digital filters, three 11-stage envelopes, LFO, and 15 modulation sources allow you to further shape and morph your sounds. There's even a built-in 24-bit VLSI dual effects processor with reverb, chorus, flanging and delay. The SD-1 also has a standard 61-note keyboard with velocity sensitivity, polyphonic aftertouch and full MIDI implementation with 12 channels for multitimbral functions as well as four 16-bit DAC outputs.
 Like the VFX-SD, the SD-1 has a professional quality on-board sequencer making it a complete all-in-one music production workstation. This is a 24-track sequencer with 25,000 note capacity and it holds up to 60 sequences and 20 songs. There is quantization (96 ppqn), real-time or step entry, looped or linear mode, and auto-punch in/out. Tracks can be set to control the SD-1's internal voices or external MIDI equipment, or both at the same time! An on-board 3.5" disk drive allows you to store your programs, sequences, songs, and even MIDI SysEx data. The SD-1 is compatible with all VFX and VFX-SD program librarys too!
 
+# About this project
+We are Sojus Records, one of the longest-running netlabels still active. We are musicians not programmers, but we like old synths and emulations. So we decided to build a fully featured VST3 version of the MAME®-emulated Ensoniq® SD-1/32, which is never emulated before. Thanks to the recent AI coding revolution, we are successfully built it!
+
 # What's working?
 Everything. Check the original manual here: [Polynominal](https://www.polynominal.com/ensoniq-sd1/ensoniq-sd1-manual.pdf)
 
 # Features:
 - Intel® Windows® / Mac Intel®+ARM® universal binaries
-- VST3 state saving, midi input and automation, full gui with VFD display and onboard keyboard
-- Can load all compatible VFX/VFX-SD/SD1-24/SD1-32 disk images and cartridges (.img .bin .crt etc) Attach the disk image with Load Floppy/Cartridge button, Press Storage, then select DISK. Press LOAD. The display shows the Disk Load page, with the File Type selected. Move the data entry slider to select file.
+- VST3 state saving, midi input and automation, 4 different panels, resizeable gui with VFD display and onboard keyboard
+- Can load all compatible VFX/VFX-SD/SD1-24/SD1-32 disk images and cartridges (.img .bin .crt etc)
+  - Attach the disk image with Load Floppy/Cartridge button, Press Storage, then select DISK. Press LOAD. The display shows the Disk Load page, with the File Type selected. Move the data entry slider to select file.
 
 # Known limitations
 - Only 1 instance can be run simultaneous.
@@ -48,7 +52,8 @@ Everything. Check the original manual here: [Polynominal](https://www.polynomina
   - u37.bin e08931013c8aca2460b4f2c3512e1d3e9a610a7f921e22012bb13bd23a3e56d7
   - u38.bin 2f185a185961a1c14472c2b706642c0d9e7a0792d57d946a349840905782e5ca
   
-- Optional: If you want to run the internal sequencer then you need the original disk image: Ensoniq® SD1 Sequencer OS v410 (Omniflop, SD-1 800K type). Attach the disk image with Load Floppy/Cartridge, Press Storage, then select DISK. Press LOAD. The display shows the Disk Load page, with the File Type selected. Move the data entry slider all the way up to select TYPE=SEQUENCER OS.
+- Optional: If you want to run the internal sequencer then you need the original disk image: Ensoniq® SD1 Sequencer OS v410 (SD-1 800K type).
+  - Attach the disk image with Load Floppy/Cartridge, Press Storage, then select DISK. Press LOAD. The display shows the Disk Load page, with the File Type selected. Move the data entry slider all the way up to select TYPE=SEQUENCER OS.
 
 # License and credits
 
