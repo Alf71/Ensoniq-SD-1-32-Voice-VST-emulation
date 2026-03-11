@@ -1,5 +1,5 @@
 # Ensoniq® SD-1 32-Voice VST Emulation
-MAME®-based emulation of the Ensoniq® SD-1 32 voices version synthesizer with JUCE® VST3
+MAME®-based emulation of the Ensoniq® SD-1 32-Voice synthesizer with JUCE® VST3
 
 ![Screenshot of Ensoniq SD-1 VST](https://github.com/kukoricajoe/Ensoniq-SD-1-32-voices-VST-emulation/blob/main/sd-1.png)
 Ensoniq SD-1 with Compact panel in FL Studio
