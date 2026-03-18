@@ -1,63 +1,119 @@
 # Build Instructions for Ensoniq SD-1 32-Voice VST
 
-This project embeds a headless MAME emulation engine inside a JUCE VST3 plugin container to perfectly recreate the Ensoniq SD-1 synthesizer. 
+This project embeds a headless MAME emulation engine inside a JUCE VST3 plugin container to perfectly recreate the Ensoniq SD-1 synthesizer.
 
 Because MAME is not natively designed to be run as a shared library inside a DAW, building this project requires patching the MAME source code, building it, and extracting the generated archive files to link them to the JUCE project.
 
 ## Prerequisites
 
-1. **JUCE Framework** (v7 or v8, built on V8)
-2. **MAME Source Code** (Built on version 0.286)
-3. **SDL2 & SDL3 Frameworks** (Installed in `/Library/Frameworks` on macOS)
-4. **Xcode** (for macOS build) or **MSYS2** (for Windows)
+**JUCE Framework** (v7 or v8, built on V8)
+
+**MAME Source Code** (Built on version 0.286) 'git clone --depth 1 https://github.com/mamedev/mame.git'
+
+**macOS Build:** Xcode, SDL2 & SDL3 Frameworks (Installed in /Library/Frameworks on macOS) 'xcode-select --install' then 'brew install pcre2 sdl2 sdl2_ttf qt asio sqlite utf8proc flac pugixml portmidi portaudio sdl3 pkg-config'
+
+**Windows Build:** GCC (for GENIE), MSYS2, Python3 (for MAME compilation) and Visual Studio (built on 2026) (for VST3 plugin generation).
 
 ## Step 1: Patching the MAME Source
 
 We had to make specific modifications to the MAME core to expose certain internal states and adapt the Ensoniq sound chip for VST audio streaming.
 
 1. Download or clone the vanilla MAME source code.
-2. Locate the `MAME_Patches` folder in this repository.
+
+2. Locate the MAME_Patches folder in this repository.
+
 3. Copy and replace the following files in your MAME source tree:
-   - `ui.cpp` -> Overwrite in `/src/frontend/mame/ui/ui.cpp`
-   - `esq5505.cpp` -> Overwrite in `src/mame/ensoniq/esq5505.cpp` 
+
+   - ui.cpp -> Overwrite in /src/frontend/mame/ui/ui.cpp
+
+   - esq5505.cpp -> Overwrite in src/mame/ensoniq/esq5505.cpp
 
 ## Step 2: Compiling MAME and Extracting Archives
 
-Instead of building a standalone static library, we build the standard MAME executable and extract the generated object archives (`.a` files) created during the build process.
+Instead of building a standalone static library, we build the standard MAME executable and extract the generated object archives (.a/lib files) created during the build process.
 
-1. Build MAME from the source via terminal (e.g., using `make SUBTARGET=sd132 USE_BGFX=0`. Don't forget to add universal binary switches if applicable (e.g. `TARGETOS=macosx PTR64=1 PRECOMPILE=0 ARCHOPTS="-arch arm64"`)
-2. Once compiled, navigate to the internal build directory. On macOS, this is typically located at:
-   `[MAME_SOURCE_DIR]/build/osx_clang/bin/x64/Release/` (or `arm64` if you are on Apple Silicon).
-3. Here you will find the generated `.a` files (such as `liboptional.a`, `libmame_mame.a`, `libemu.a`, etc.) which contain the compiled engine.
+1. Read the official MAME instructions. Build MAME from the source via terminal/UCRT64 (e.g., 'make SUBTARGET=sd132 USE_BGFX=0' on mac, 'make vs2022 SUBTARGET=sd132 SOURCES=src/mame/ensoniq/ensoniq.cpp -j8 USE_BGFX=0' on win). Don't forget to add universal binary switches if applicable on macOS (e.g. 'TARGETOS=macosx PTR64=1 PRECOMPILE=0 ARCHOPTS="-arch arm64"'). 
+
+2. Once compiled, navigate to the internal build directory.
+
+   - macOS: Typically located at [MAME_SOURCE_DIR]/build/osx_clang/bin/x64/Release/ (or arm64 if you are on Apple Silicon).
+
+   - Windows: Typically located at [MAME_SOURCE_DIR]/build/windows_x64_clang/bin/x64/Release/ (or gcc depending on your specific MSYS2 toolchain).
+
+3. Here you will find the generated .a and .o (mac) .lib (win) files (such as liboptional.a/lib, libmame_mame.a/lib, libemu.a/lib, etc.) which contain the compiled engine.
 
 ## Step 3: Configuring Projucer
 
-1. Open `EnsoniqSD1.jucer` using the **Projucer** application.
-2. Go to the **Exporters** tab (e.g., Xcode macOS).
-3. **Important:** - Update the **Header Search Paths** to point to your local MAME source directory.
-   - Update the **Library Search Paths** to point to the `build/osx_clang/bin/.../Release/` directory from Step 2.
-   - Ensure all the required MAME `.a` files are listed in your **External Libraries to Link** section.
-4. Save the project and click **"Open in IDE"**.
+1. Open EnsoniqSD1-yourOS.jucer using the Projucer application.
 
-## Step 4: Building the VST3 in Xcode (macOS)
+2. Go to the Exporters tab (e.g., Xcode macOS or Visual Studio 2026).
 
-1. In Xcode, select the `Ensoniq SD-1 - VST3` target.
-2. Build the project (`Cmd + B`).
+3. **Important:** Global Settings:
+
+   - Update the Header Search Paths to point to your local MAME source directory.
+
+   - Update the Library Search Paths to point to the correct Release directory from Step 2.
+
+   - Ensure all the required MAME .a/.o/lib files are listed in your External Libraries to Link section.
+
+## Windows-Specific Optimizations (Visual Studio 2026)
+
+To ensure flawless real-time audio performance and zero dropouts on Windows, the Visual Studio 2026 exporter must be configured precisely:
+
+- Select the Release configuration under the Visual Studio 2022 exporter.
+
+- In the Extra Library Dependencies field, add: winmm.lib; avrt.lib (Required for high-resolution timers and MMCSS real-time threading).
+
+- Set Optimisation to Maximise speed (/O2).
+
+- Set Link Time Optimisation (LTO) to Enabled (Triggers /GL Whole Program Optimization).
+
+- In the Extra Compiler Flags field, add: /Oi /Ot (Enables intrinsic functions and heavily favors fast code execution).
+
+- Save the project and click "Open in IDE".
+
+## Step 4: Building the VST3
+
+**macOS (Xcode)**
+
+- In Xcode, select the Ensoniq SD-1 - VST3 target.
+
+- Build the project (Cmd + B).
 
 ### A Note on macOS Sandboxing & Post-Build Scripts
-If you check the Projucer settings, you will see a custom **Post-Build Script**. 
+If you check the Projucer settings, you will see a custom Post-Build Script.
 Because macOS Sequoia and strict DAW sandboxing block dynamic external library loading, this script automatically:
-- Creates a `Frameworks` folder inside the generated `.vst3` bundle.
-- Copies the required `SDL2.framework` and `SDL3.framework` into the VST3.
-- Applies an Ad-Hoc `codesign` to both the frameworks and the final VST3 plugin.
-- The project uses double `@rpath` linker flags (`-Wl,-rpath,/Library/Frameworks -Wl,-rpath,@loader_path/../Frameworks`) so it works seamlessly both on the developer's machine and the end-user's machine.
+
+- Creates a Frameworks folder inside the generated .vst3 bundle.
+
+- Copies the required SDL2.framework and SDL3.framework into the VST3.
+
+- Applies an Ad-Hoc codesign to both the frameworks and the final VST3 plugin.
+
+- The project uses double @rpath linker flags (-Wl,-rpath,/Library/Frameworks -Wl,-rpath,@loader_path/../Frameworks) so it works seamlessly both on the developer's machine and the end-user's machine.
+
+**Windows (Visual Studio 2026)**
+
+- In Visual Studio, ensure your build target is set to Release and x64.
+
+- Build the Solution (Ctrl + Shift + B).
+
+- The compiled .vst3 file will be located in your Builds\VisualStudio2022\x64\Release\VST3 directory.
 
 ## Step 5: ROM Installation
 
-Due to copyright reasons, the Ensoniq ROM files are **not** included in this repository. 
-1. Once built, open the plugin in your DAW. 
-2. A warning screen will appear showing you the correct path (e.g., `~/Documents/EnsoniqSD1/`).
+Due to copyright reasons, the Ensoniq ROM files are not included in this repository.
+
+1. Once built, open the plugin in your DAW.
+
+2. A warning screen will appear showing you the correct path:
+
+   - macOS: ~/Documents/EnsoniqSD1/
+
+   - Windows: C:\Users\[YourName]\Documents\EnsoniqSD1\
+
 3. Place original Ensoniq SD-1 32 variant AND Ensoniq 2x40 VFD rom files into that directory and put them into sd132.zip.
+
   - Filename | SHA256
   - esqvfd_font_vfx.bin ab2f7ddc6ab7fafaf07985d01788197849cdaeb5a4a7d9f2f85098dfd65edf01
   - sd1_32_402_hi.bin 90ae35de8661f5de0793b6ea59a4d6524e90c0828a29e6ea8906ff759116136d

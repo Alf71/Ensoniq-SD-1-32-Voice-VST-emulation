@@ -1,7 +1,5 @@
 /*
   ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
     
     Ensoniq SD-1 MAME VST Emulation
     Open Source GPLv2/v3
@@ -16,8 +14,7 @@
 #include "PluginProcessor.h"
 
 //==============================================================================
-/**
-*/
+
 class EnsoniqSD1AudioProcessorEditor  : public juce::AudioProcessorEditor,
                                         private juce::Timer
 {
@@ -46,7 +43,7 @@ private:
 
     // --- SETTINGS PANEL GUI COMPONENTS ---
     juce::TextButton settingsButton { "Settings / About" };
-    juce::GroupComponent settingsGroup { "settings_group", "Ensoniq(R) SD-1/32 Settings v0.9.5b" };
+    juce::GroupComponent settingsGroup { "settings_group", "Ensoniq(R) SD-1/32 Settings v0.9.6b" };
     
     juce::Label bufferLabel { "buffer_label", "MAME(R) Engine buffer:" };
     juce::ComboBox bufferCombo;
@@ -66,14 +63,16 @@ private:
     
     // Calculates and applies the optimal window size based on the active layout aspect ratio
     void updateWindowSize(); 
-    
-    // Visual drag handle for resizing the plugin window
-    std::unique_ptr<juce::ResizableCornerComponent> resizer;
-    
+        
     // --- WINDOW SIZE TRACKING ---
     // Used by the Timer to detect when the MAME internal layout resolution changes
     int lastW = 0;
     int lastH = 0;
-
+    
+#ifdef _WIN32
+    // Windows UI hardware acceleration via OpenGL
+    juce::OpenGLContext openGLContext;
+#endif
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EnsoniqSD1AudioProcessorEditor)
 };

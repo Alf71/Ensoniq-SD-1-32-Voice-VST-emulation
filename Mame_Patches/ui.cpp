@@ -625,21 +625,19 @@ static void output_joined_collection(const TColl &collection, TEmitMemberFunc em
 
 //-------------------------------------------------
 //  display_startup_screens - display the
-//  various startup screens
+//  various startup screens VST HACKED
 //-------------------------------------------------
 
 void mame_ui_manager::display_startup_screens(bool first_time)
 {
-    // 1. LÉPÉS: Töröljük a "Loading complete" szöveget a MAME memóriájából
+    // 1. delete "Loading complete" from MAME memory
     messagebox_text.clear();
     messagebox_poptext.clear();
 
-    // 2. LÉPÉS: Azonnal és tisztán átkapcsoljuk a MAME-et a játék (in-game) módba!
-    // Ez megszünteti a NOINPUT állapotot, így a szövegdoboz örökre eltűnik,
-    // és sosem fagy le a "Press any key" képernyőn.
+    // 2. put MAME in-game mode
     set_handler(ui_callback_type::GENERAL, handler_callback_func(&mame_ui_manager::handler_ingame, this));
     
-    // 3. LÉPÉS: Kényszerítünk egy képkocka-frissítést a tiszta képernyőért
+    // 3. force clear frame refresh
     machine().video().frame_update();
 }
 

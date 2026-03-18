@@ -13,19 +13,18 @@ A single patch can contain up to 6 of the 168 waves in its ROM memory that can b
 Like the VFX-SD, the SD-1 has a professional quality on-board sequencer making it a complete all-in-one music production workstation. This is a 24-track sequencer with 25,000 note capacity and it holds up to 60 sequences and 20 songs. There is quantization (96 ppqn), real-time or step entry, looped or linear mode, and auto-punch in/out. Tracks can be set to control the SD-1's internal voices or external MIDI equipment, or both at the same time! An on-board 3.5" disk drive allows you to store your programs, sequences, songs, and even MIDI SysEx data. The SD-1 is compatible with all VFX and VFX-SD program librarys too! [Source](https://www.vintagesynth.com/ensoniq/sd-1)
 
 # About this project
-We are Sojus Records, one of the longest-running netlabels still active. We are musicians, not programmers, but we love old synths and emulations. We decided to build a fully featured VST3 version of the MAME-emulated Ensoniq SD-1/32, which has never been emulated before. Thanks to the recent AI coding revolution, we have successfully built it. This proof-of-concept is an important step for both musicians and coders. We are looking forward to bringing other MAME synths to life in the future!
+We are Sojus Records, one of the longest-running netlabels still active. We are musicians, not programmers, but we love old synths and emulations. We decided to build a fully featured VST3/AU version of the MAME-emulated Ensoniq SD-1/32, which has never been emulated before. Thanks to the recent AI coding revolution, we have successfully built it. This proof-of-concept is an important step for both musicians and coders. We are looking forward to bringing other MAME synths to life in the future!
 
 # What's working?
 Everything. Check the original manual here: [Polynominal](https://www.polynominal.com/ensoniq-sd1/ensoniq-sd1-manual.pdf)
 
 # Features:
-- Mac Intel+ARM universal binaries (Intel Windows build is in progress)
-- VST3 state saving, MIDI input and automation, 4 different panel layouts, resizable GUI with VFD display, and an onboard keyboard
+- Windows 10+ 64 bit VST3, Mac Intel+ARM Universal Binary VST3
+- VST3 state saving, MIDI input and automation, 4 different panel layouts, resizable GUI with VFD display, and an onboard keyboard, buffer setting
 - Can load all compatible VFX/VFX-SD/SD1-24/SD1-32 disk images and cartridges (.img .bin .crt etc)
   - How to load: Attach the disk image using the "Load Floppy/Cartridge" button. Press Storage, then select DISK. Press LOAD. The display will show the Disk Load page with the File Type selected. Move the data entry slider to select your file.
 
 # Known limitations
-- Mac Universal Binary only (Windows build is currently in progress).
 - Only 1 instance can run at a time per DAW due to engine limitations.
 - Daw automation is not visible on GUI
 - No floppy drive sound :D
@@ -36,14 +35,17 @@ Everything. Check the original manual here: [Polynominal](https://www.polynomina
   sudo xattr -rd com.apple.quarantine /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3
 
 # Requirements
-- macOS 14 (Ventura) or newer. (Windows 10 or newer when available).
-- A VST3 compatible DAW.
-- Original Ensoniq SD-1 32-voice variant AND Ensoniq 2x40 VFD ROM files placed at this exact location must be zipped to sd132.zip:
-
-  Windows: 
-  
-  Mac: /Users/yourusername/Documents/EnsoniqSD1
-  
+- Please note that this is a hardware-level emulation of the synthesizer, so it places heavy demands on the CPU! Set the buffer setting to higher if buffer underrun occurs.
+- Windows 10 or newer or macOS 14 (Ventura) or newer.
+- Windows build is AVX2 optimized (Haswell or newer).
+- VST3 compatible DAW
+- IMPORTANT - ROM Files Required!
+  Due to copyright reasons, the required Ensoniq ROM files are NOT included.
+  To make the plugin work:
+* Create a folder named EnsoniqSD1 in your user's Documents folder:
+- Win C:\Users\yourusername\Documents
+- macOS /yourusername/Documents/
+* Obtain the Ensoniq SD-1 32 variant AND Ensoniq 2x40 VFD ROM files and place EXACTLY these files in that folder AND zip them to sd132.zip.<br/>
   Filename | SHA256
   - esqvfd_font_vfx.bin ab2f7ddc6ab7fafaf07985d01788197849cdaeb5a4a7d9f2f85098dfd65edf01
   - sd1_32_402_hi.bin 90ae35de8661f5de0793b6ea59a4d6524e90c0828a29e6ea8906ff759116136d

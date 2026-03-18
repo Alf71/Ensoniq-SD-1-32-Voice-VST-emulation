@@ -1,8 +1,6 @@
 /*
   ==============================================================================
 
-    This file contains the basic framework code for a JUCE plugin editor.
-    
     Ensoniq SD-1 MAME VST Emulation
     Open Source GPLv2/v3
     https://www.sojusrecords.com
@@ -16,36 +14,40 @@
 EnsoniqSD1AudioProcessorEditor::EnsoniqSD1AudioProcessorEditor (EnsoniqSD1AudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
+
+#ifdef _WIN32
+    // Attach OpenGL context to offload high-resolution image resampling to the GPU.
+    // This dramatically reduces CPU usage in Windows DAWs.
+    openGLContext.attachTo(*this);
+#endif
+
     // Start the UI polling timer (30 Hz is enough for smooth UI and MAME frame fetching)
     startTimerHz(30);
-            
-    // --- WINDOW SETTINGS & RESIZER ---
-    lastW = audioProcessor.mameInternalWidth.load();
-    lastH = audioProcessor.mameInternalHeight.load();
-    float aspect = (float)lastW / (float)lastH;
-
-    setResizable(true, true);
     
-    // DYNAMIC CONSTRAINTS: 
-    // This strictly enforces the aspect ratio and prevents DAWs (like FL Studio) 
-    // from squashing the window below the correct minimum bounds during project load.
-    getConstrainer()->setFixedAspectRatio(aspect);
-    getConstrainer()->setSizeLimits(900, juce::roundToInt(900.0f / aspect), 2400, juce::roundToInt(2400.0f / aspect));
+    this->setWantsKeyboardFocus(false);
+    this->setMouseClickGrabsKeyboardFocus(false);
+    
+    // --- WINDOW SETTINGS & RESIZER ---
+        lastW = audioProcessor.mameInternalWidth.load();
+        lastH = audioProcessor.mameInternalHeight.load();
+        float aspect = (float)lastW / (float)lastH;
 
-    // Determine initial size: Use saved dimensions if valid, otherwise fallback to 1200px width
-    int startW = audioProcessor.savedWindowWidth >= 900 ? audioProcessor.savedWindowWidth : 1200;
-    int startH = juce::roundToInt(startW / aspect);
-    setSize(startW, startH);
+        int startW = audioProcessor.savedWindowWidth >= 900 ? audioProcessor.savedWindowWidth : 1200;
+        int startH = juce::roundToInt(startW / aspect);
 
-    // Initialize the visual resize handle in the bottom right corner
-    resizer = std::make_unique<juce::ResizableCornerComponent>(this, getConstrainer());
-    addAndMakeVisible(*resizer);
+        setResizable(true, true);
+        getConstrainer()->setFixedAspectRatio(aspect);
+        setResizeLimits(900, juce::roundToInt(900.0f / aspect), 2400, juce::roundToInt(2400.0f / aspect));
+        setSize(startW, startH);
     
     // --- BUTTON INITIALIZATION ---
     addAndMakeVisible(loadMediaButton);
     loadMediaButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff333333));
     loadMediaButton.setColour(juce::TextButton::textColourOffId, juce::Colours::lightgrey);
     
+    loadMediaButton.setWantsKeyboardFocus(false);
+    loadMediaButton.setMouseClickGrabsKeyboardFocus(false);
+        
     loadMediaButton.onClick = [this] { loadMediaButtonClicked(); };
     
     if (audioProcessor.isRomMissing.load(std::memory_order_acquire) ||
@@ -55,12 +57,17 @@ EnsoniqSD1AudioProcessorEditor::EnsoniqSD1AudioProcessorEditor (EnsoniqSD1AudioP
     
     // --- SETTINGS BUTTON & PANEL INITIALIZATION ---
     addAndMakeVisible(settingsButton);
+    
+    settingsButton.setWantsKeyboardFocus(false);
+    settingsButton.setMouseClickGrabsKeyboardFocus(false);
+    
     settingsButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff333333));
     settingsButton.setColour(juce::TextButton::textColourOffId, juce::Colours::lightgrey);
     settingsButton.onClick = [this] { toggleSettings(); };
 
     // GroupComponent and its children are hidden by default (addChildComponent instead of addAndMakeVisible)
-    addChildComponent(settingsGroup); 
+    addChildComponent(settingsGroup);
+        
     settingsGroup.setColour(juce::GroupComponent::textColourId, juce::Colours::orange);
     settingsGroup.setColour(juce::GroupComponent::outlineColourId, juce::Colours::grey);
 
@@ -86,36 +93,56 @@ EnsoniqSD1AudioProcessorEditor::EnsoniqSD1AudioProcessorEditor (EnsoniqSD1AudioP
     addChildComponent(webLink);
 
     addChildComponent(closeSettingsButton);
+    
+    closeSettingsButton.setWantsKeyboardFocus(false);
+    closeSettingsButton.setMouseClickGrabsKeyboardFocus(false);
+    
     closeSettingsButton.onClick = [this] { toggleSettings(); };
-
+    
     // Hide UI elements if the plugin is in a disabled state
     if (audioProcessor.isRomMissing.load(std::memory_order_acquire) ||
         audioProcessor.isBlockedByAnotherInstance.load(std::memory_order_acquire)) {
         loadMediaButton.setVisible(false);
-        settingsButton.setVisible(false); 
+        settingsButton.setVisible(false);
     }
 }
 
 EnsoniqSD1AudioProcessorEditor::~EnsoniqSD1AudioProcessorEditor()
 {
+#ifdef _WIN32
+    // Detach the context safely before the component is destroyed to prevent VST3 crashes on close
+    openGLContext.detach();
+#endif
     stopTimer();
 }
 
 void EnsoniqSD1AudioProcessorEditor::timerCallback()
 {
-    // 1. Dynamic Window Resize Monitor
-    // Detects if the APVTS parameter changed the internal MAME resolution and triggers a UI resize
+        // SStandard offline protection
+        if (audioProcessor.isNonRealtime()) {
+            audioProcessor.getFrameFlag().store(false, std::memory_order_relaxed);
+            return;
+        }
+
+        // Protection against drawing on the dead window
+        if (!isShowing() || getWidth() <= 0 || getHeight() <= 0 || getTopLevelComponent()->getPeer() == nullptr) {
+            audioProcessor.getFrameFlag().store(false, std::memory_order_relaxed);
+            return;
+        }
+    
+    // Dynamic Window Resize Monitor
     int currentMameW = audioProcessor.mameInternalWidth.load(std::memory_order_acquire);
     int currentMameH = audioProcessor.mameInternalHeight.load(std::memory_order_acquire);
     
     if (currentMameW != lastW || currentMameH != lastH) {
         lastW = currentMameW;
         lastH = currentMameH;
-        updateWindowSize(); 
+        
+        // Always resize safely
+        updateWindowSize();
     }
 
-    // 2. Frame Update
-    // If MAME has rendered a new frame to the background buffer, trigger a repaint
+    // Frame Update
     if (audioProcessor.getFrameFlag().exchange(false, std::memory_order_acquire)) {
         repaint();
     }
@@ -129,7 +156,7 @@ void EnsoniqSD1AudioProcessorEditor::paint (juce::Graphics& g)
         g.setColour(juce::Colours::red);
         g.setFont(24.0f);
         
-        juce::String errorMsg = "Ensoniq(R) SD-1/32 MAME(R) Emulation VST\n\n";
+        juce::String errorMsg = "Ensoniq(R) SD-1/32 MAME(R) Emulation\n\n";
         errorMsg += "Instance Limit Reached!\n\n";
         errorMsg += "Due to MAME engine limitations, only ONE instance\n";
         errorMsg += "of this plugin can run at a time in the host.\n\n";
@@ -145,7 +172,7 @@ void EnsoniqSD1AudioProcessorEditor::paint (juce::Graphics& g)
         g.setColour(juce::Colours::orange);
         g.setFont(24.0f);
         
-        juce::String errorMsg = "Ensoniq(R) SD-1/32 MAME(R) Emulation VST\n\n";
+        juce::String errorMsg = "Ensoniq(R) SD-1/32 MAME(R) Emulation\n\n";
         errorMsg += "Sample Rate Changed!\n\n";
         errorMsg += "The host sample rate has changed since the plugin was loaded.\n";
         errorMsg += "To prevent audio glitches, please reload the plugin or restart your DAW.";
@@ -156,11 +183,11 @@ void EnsoniqSD1AudioProcessorEditor::paint (juce::Graphics& g)
     
     // --- MISSING ROM WARNING MESSAGE ---
     if (audioProcessor.isRomMissing.load(std::memory_order_acquire)) {
-        g.fillAll(juce::Colour(0xff222222)); 
+        g.fillAll(juce::Colour(0xff222222));
         g.setColour(juce::Colours::red);
         g.setFont(24.0f);
         
-        juce::String errorMsg = "Ensoniq(R) SD-1/32 MAME(R) Emulation VST\n\n";
+        juce::String errorMsg = "Ensoniq(R) SD-1/32 MAME(R) Emulation\n\n";
         errorMsg += "Error! Roms not found!\n\n";
         errorMsg += "Please copy the 'sd132.zip' file into the following folder:\n\n";
         errorMsg += juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("EnsoniqSD1").getFullPathName();
@@ -175,11 +202,11 @@ void EnsoniqSD1AudioProcessorEditor::paint (juce::Graphics& g)
     int internalW = audioProcessor.mameInternalWidth.load();
     int internalH = audioProcessor.mameInternalHeight.load();
     
-    // Enable High Quality Resampling to ensure vector-like sharpness when MAME's 
+    // Enable High Quality Resampling to ensure vector-like sharpness when MAME's
     // internal 2048px canvas is scaled down to the VST window size.
-    g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
+    g.setImageResamplingQuality(juce::Graphics::mediumResamplingQuality);
         
-    // Using JUCE's high-performance integer-based drawImage to stretch 
+    // Using JUCE's high-performance integer-based drawImage to stretch
     // the internal MAME canvas accurately to the VST window bounds.
     g.drawImage(audioProcessor.screenBuffers[readIndex],
                 0, 0, getWidth(), getHeight(),
@@ -188,28 +215,32 @@ void EnsoniqSD1AudioProcessorEditor::paint (juce::Graphics& g)
                
     // --- SETTINGS OVERLAY ---
     if (isSettingsVisible) {
-        // 1. Darken the background slightly to bring focus to the settings panel
-        g.fillAll(juce::Colour(0x4d000000));
+            // 1. Darken the background slightly to bring focus to the settings panel
+            g.fillAll(juce::Colour(0x4d000000));
+            
+            // 2. resized() tells the dimensions
+            auto panelRect = settingsGroup.getBounds().toFloat();
+            
+            panelRect.removeFromTop(8.0f);
+            
+            // 3. Draw the solid dark background for the settings box
+            g.setColour(juce::Colour(0xcc000000));
+            g.fillRoundedRectangle(panelRect, 5.0f);
+        }
         
-        // 2. Fetch panel boundaries
-        auto bounds = getLocalBounds();
-        auto panelRect = bounds.withSizeKeepingCentre(600, 300).toFloat();
-        
-        // 3. Draw the solid dark background for the settings box
-        g.setColour(juce::Colour(0xcc000000));
-        g.fillRoundedRectangle(panelRect, 5.0f);
-    }
 }
 
 void EnsoniqSD1AudioProcessorEditor::resized()
 {
+   
+    if (getWidth() <= 0 || getHeight() <= 0) return;
     int baseW = audioProcessor.mameInternalWidth.load();
     int baseH = audioProcessor.mameInternalHeight.load();
     
     float targetAspect = (float)baseW / (float)baseH;
     float currentAspect = (float)getWidth() / (float)getHeight();
 
-    // SAFETY NET: Only save the new window dimensions to memory if the DAW (or user) 
+    // SAFETY NET: Only save the new window dimensions to memory if the DAW (or user)
     // hasn't corrupted the aspect ratio with an invalid frame constraint.
     if (std::abs(currentAspect - targetAspect) < 0.05f) {
         audioProcessor.savedWindowWidth = getWidth();
@@ -219,21 +250,20 @@ void EnsoniqSD1AudioProcessorEditor::resized()
     float scaleX = getWidth() / (float)baseW;
     float scaleY = getHeight() / (float)baseH;
 
-    std::string view;
-    {
-        std::lock_guard<std::mutex> lock(audioProcessor.viewMutex);
-        view = audioProcessor.requestedViewName;
-    }
+    // LOCK-FREE READ: Safely get the current view index from the processor
+    int viewIdx = audioProcessor.requestedViewIndex.load(std::memory_order_acquire);
 
     // --- DYNAMIC BUTTON POSITIONING (Mapped to 2048px internal MAME space) ---
     int btnX = 55;
     int btnY = 403; // Default position for Compact layout (2048x921)
 
-    if (view == "Full") {
+    if (viewIdx == 1) {
         btnX = 82; btnY = 171;  // Full Keyboard layout (2048x671)
-    } else if (view == "Panel") {
+    }
+    else if (viewIdx == 2) {
         btnX = 85; btnY = 265;  // Rack Panel layout (2048x379)
-    } else if (view == "Tablet") {
+    }
+    else if (viewIdx == 3) {
         btnX = 95; btnY = 1250; // Tablet layout (2048x1476)
     }
 
@@ -283,33 +313,34 @@ void EnsoniqSD1AudioProcessorEditor::resized()
 
     closeSettingsButton.setBounds(panelRect.getCentreX() - 50, y, 100, rowHeight);
     
-    if (resizer != nullptr) {
-        resizer->setBounds(getWidth() - 20, getHeight() - 20, 20, 20);
-    }
 }
 
 // ==============================================================================
 // MOUSE EVENT INJECTION (Scaled to MAME coordinates)
 // ==============================================================================
 void EnsoniqSD1AudioProcessorEditor::mouseDown(const juce::MouseEvent& e) {
+    if (getWidth() <= 0 || getHeight() <= 0) return;
     int w = audioProcessor.mameInternalWidth.load();
     int h = audioProcessor.mameInternalHeight.load();
     audioProcessor.injectMouseDown(juce::roundToInt((e.x / (float)getWidth()) * w), juce::roundToInt((e.y / (float)getHeight()) * h));
 }
 
 void EnsoniqSD1AudioProcessorEditor::mouseUp(const juce::MouseEvent& e) {
+    if (getWidth() <= 0 || getHeight() <= 0) return;
     int w = audioProcessor.mameInternalWidth.load();
     int h = audioProcessor.mameInternalHeight.load();
     audioProcessor.injectMouseUp(juce::roundToInt((e.x / (float)getWidth()) * w), juce::roundToInt((e.y / (float)getHeight()) * h));
 }
 
 void EnsoniqSD1AudioProcessorEditor::mouseDrag(const juce::MouseEvent& e) {
+    if (getWidth() <= 0 || getHeight() <= 0) return;
     int w = audioProcessor.mameInternalWidth.load();
     int h = audioProcessor.mameInternalHeight.load();
     audioProcessor.injectMouseMove(juce::roundToInt((e.x / (float)getWidth()) * w), juce::roundToInt((e.y / (float)getHeight()) * h));
 }
 
 void EnsoniqSD1AudioProcessorEditor::mouseMove(const juce::MouseEvent& e) {
+    if (getWidth() <= 0 || getHeight() <= 0) return;
     int w = audioProcessor.mameInternalWidth.load();
     int h = audioProcessor.mameInternalHeight.load();
     audioProcessor.injectMouseMove(juce::roundToInt((e.x / (float)getWidth()) * w), juce::roundToInt((e.y / (float)getHeight()) * h));
@@ -319,20 +350,26 @@ void EnsoniqSD1AudioProcessorEditor::loadMediaButtonClicked()
 {
     // Launch asynchronous file chooser
     fileChooser = std::make_unique<juce::FileChooser>("Select Floppy Image or cartridge",
-                                                      juce::File::getSpecialLocation(juce::File::userHomeDirectory),
-                                                      "*.img;*.hfe;*.dsk;*.eda");
-    
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory),
+        "*.img;*.hfe;*.dsk;*.eda");
+
     auto folderChooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
-    
-    fileChooser->launchAsync(folderChooserFlags, [this] (const juce::FileChooser& fc) {
+
+    fileChooser->launchAsync(folderChooserFlags, [this](const juce::FileChooser& fc) {
         auto file = fc.getResult();
         if (file.existsAsFile()) {
-            // File selected: Thread-safely pass the path to the MAME engine
             std::lock_guard<std::mutex> lock(audioProcessor.mediaMutex);
+
+#ifdef _WIN32
+            // Force strict UTF-8 conversion for MAME to handle Windows user paths with accents
+            audioProcessor.pendingFloppyPath = file.getFullPathName().toUTF8().getAddress();
+#else
             audioProcessor.pendingFloppyPath = file.getFullPathName().toStdString();
+#endif
+
             audioProcessor.requestFloppyLoad.store(true, std::memory_order_release);
         }
-    });
+        });
 }
 
 void EnsoniqSD1AudioProcessorEditor::toggleSettings()
@@ -355,19 +392,25 @@ void EnsoniqSD1AudioProcessorEditor::updateWindowSize()
 {
     int w = audioProcessor.mameInternalWidth.load();
     int h = audioProcessor.mameInternalHeight.load();
-    
     float aspect = (float)w / (float)h;
-    getConstrainer()->setFixedAspectRatio(aspect);
     
-    // Notify the DAW of the new minimum bounds based on the active layout aspect ratio
-    getConstrainer()->setSizeLimits(900, juce::roundToInt(900.0f / aspect), 2400, juce::roundToInt(2400.0f / aspect));
-    
-    // Retain the user's customized width (or fallback to 1200px if it's too small)
     int currentW = getWidth();
     if (currentW < 900) {
         currentW = 1200;
     }
-    
     int winH = juce::roundToInt(currentW / aspect);
-    setSize(currentW, winH);
+    
+    if (getWidth() == currentW && getHeight() == winH) {
+            return;
+        }
+    
+    // Apply constraint logic and resize
+    getConstrainer()->setFixedAspectRatio(aspect);
+    getConstrainer()->setSizeLimits(900, juce::roundToInt(900.0f / aspect), 2400, juce::roundToInt(2400.0f / aspect));
+
+    juce::MessageManager::callAsync([this, currentW, winH]() {
+        setSize(currentW, winH);
+        });
+
 }
+
