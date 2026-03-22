@@ -16,8 +16,8 @@ Like the VFX-SD, the SD-1 has a professional quality on-board sequencer making i
 We are Sojus Records, one of the longest-running netlabels still active. We are musicians, not programmers, but we love old synths and emulations. We decided to build a fully featured VST3 version of the MAME-emulated Ensoniq SD-1/32, which has never been emulated before. Thanks to the recent AI coding revolution, we have successfully built it. This proof-of-concept is an important step for both musicians and coders. We are looking forward to bringing other MAME synths to life in the future!
 
 # Download 
-[Win x64 VST3](https://github.com/sojusrecords/Ensoniq-SD-1-32-Voice-VST-emulation/releases/download/0.9.6b/EnsoniqSD1-v.0.9.6b-winVST3.7z)
-[macOS UB VST3](https://github.com/sojusrecords/Ensoniq-SD-1-32-Voice-VST-emulation/releases/download/0.9.6b/EnsoniqSD1-v.0.9.6b-macVST3.7z)
+[Win x64 VST3](https://github.com/sojusrecords/Ensoniq-SD-1-32-Voice-VST-emulation/releases/download/v0.9.7b/EnsoniqSD1-v.0.9.7b-winVST3.7z)
+[macOS UB VST3](https://github.com/sojusrecords/Ensoniq-SD-1-32-Voice-VST-emulation/releases/download/v0.9.7b/EnsoniqSD1-v.0.9.7b-macVST3.7z)
 
 # What's working?
 Everything. Check the original manual here: [SD-1 Manual at Polynominal](https://www.polynominal.com/ensoniq-sd1/ensoniq-sd1-manual.pdf)
