@@ -209,14 +209,20 @@ int EnsoniqSD1AudioProcessor::readMidiByte() {
     if (mameMachine == nullptr) return 0;
 
     int currentRead = midiReadPos.load(std::memory_order_relaxed);
-    if (currentRead == midiWritePos.load(std::memory_order_acquire)) return 0;
+    int currentWrite = midiWritePos.load(std::memory_order_acquire);
+    if (currentRead == currentWrite) return 0;
 
     if (mameMachine->time().as_double() >= midiBuffer[currentRead].targetMameTime) {
         uint8_t data = midiBuffer[currentRead].data;
 
-        // --- OPTIMIZATION ---
         // Fast wrap-around using bitwise AND
-        midiReadPos.store((currentRead + 1) & (MIDI_BUFFER_SIZE - 1), std::memory_order_release);
+        int nextRead = (currentRead + 1) & (MIDI_BUFFER_SIZE - 1);
+        midiReadPos.store(nextRead, std::memory_order_release);
+
+        // IF BUFFER IS EMPTY AND SENDING SYSEX ---
+        if (nextRead == currentWrite && isTransmittingSysEx.load(std::memory_order_acquire)) {
+            isTransmittingSysEx.store(false, std::memory_order_release);
+        }
 
         return data;
     }
@@ -1098,6 +1104,35 @@ void EnsoniqSD1AudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
 
 void EnsoniqSD1AudioProcessor::releaseResources()
 {
+}
+
+// ==============================================================================
+// SYSEX FILE IMPORTER (HARDWARE BAUD RATE EMULATION)
+// ==============================================================================
+void EnsoniqSD1AudioProcessor::loadSysExFile(const juce::File& syxFile)
+{
+    if (mameMachine == nullptr) return;
+
+    juce::MemoryBlock syxData;
+    if (syxFile.loadFileAsData(syxData) && syxData.getSize() > 0) { // security check
+        const uint8_t* data = static_cast<const uint8_t*>(syxData.getData());
+        size_t size = syxData.getSize();
+
+        // 0. signal to gui
+        isTransmittingSysEx.store(true, std::memory_order_release);
+
+        // 1. get internal MAME time
+        double startTime = mameMachine->time().as_double() + 0.5;
+
+        // 2. calculate MIDI speed (0.00035 mp / byte)
+        double timePerByte = 0.00035;
+
+        // 3. psuh it to MIDI buffer
+        for (size_t i = 0; i < size; ++i) {
+            double targetTime = startTime + (i * timePerByte);
+            pushMidiByte(data[i], targetTime);
+        }
+    }
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations

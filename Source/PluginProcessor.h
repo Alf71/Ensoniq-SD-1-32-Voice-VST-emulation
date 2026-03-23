@@ -52,12 +52,18 @@ public:
     std::atomic<bool> mameStateIsReady{ false };
     juce::WaitableEvent mameStateEvent{ false };
 
-    // --- MEDIA HANDLING (FLOPPY/CARTRIDGE) ---
+    // --- MEDIA HANDLING (FLOPPY/CARTRIDGE/SYSEX) ---
     std::atomic<bool> requestFloppyLoad{ false };
     std::atomic<bool> requestCartLoad{ false };
     std::string pendingFloppyPath;
     std::string pendingCartPath;
     std::mutex mediaMutex;
+    std::atomic<bool> isTransmittingSysEx{ false };
+    
+    // --- MEDIA STATE TRACKING ---
+        std::atomic<bool> isFloppyLoaded{ false };
+        std::atomic<bool> isCartLoaded{ false };
+        juce::String loadedMediaName{ "" };
 
     // --- WINDOW SIZE PERSISTENCE ---
     // Stores the last window size set by the user to recall it upon project load
@@ -263,6 +269,9 @@ public:
     // Dynamic offline buffer for sync
     std::atomic<int> maxOfflineBuffer{ 1024 };
 
+    // SysEx loading
+        void loadSysExFile(const juce::File& syxFile);
+    
         // --- DYNAMIC PANEL LAYOUT SELECTION ---
         // 0 = Compact, 1 = Full, 2 = Panel, 3 = Tablet
         std::atomic<int> requestedViewIndex{ 0 };
@@ -328,7 +337,7 @@ private:
         double targetMameTime;
     };
 
-    static constexpr int MIDI_BUFFER_SIZE = 4096;
+    static constexpr int MIDI_BUFFER_SIZE = 524288;
     TimestampedMidi midiBuffer[MIDI_BUFFER_SIZE];
 
     std::atomic<int> midiWritePos{ 0 };

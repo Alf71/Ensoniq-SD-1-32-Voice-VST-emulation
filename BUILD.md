@@ -64,6 +64,8 @@ Instead of building a standalone static library, we build the standard MAME exec
 
    - Update the Library Search Paths to point to the correct Release directory from Step 2.
 
+   - macOS only: put your mame/plugins folder into "Custom Xcode Resource Folders"
+
    - Ensure all the required MAME .a/.o/lib files are listed in your External Libraries to Link section.
 
 ## Windows-Specific Optimizations (Visual Studio 2026)

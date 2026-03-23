@@ -48,6 +48,8 @@ EnsoniqSD1AudioProcessorEditor::EnsoniqSD1AudioProcessorEditor (EnsoniqSD1AudioP
     loadMediaButton.setWantsKeyboardFocus(false);
     loadMediaButton.setMouseClickGrabsKeyboardFocus(false);
     loadMediaButton.onClick = [this] { loadMediaButtonClicked(); };
+    floppyIcon = juce::Drawable::createFromImageData(BinaryData::floppy_svg, BinaryData::floppy_svgSize);
+    cartIcon = juce::Drawable::createFromImageData(BinaryData::cart_svg, BinaryData::cart_svgSize);
     
     if (audioProcessor.isRomMissing.load(std::memory_order_acquire) ||
         audioProcessor.isBlockedByAnotherInstance.load(std::memory_order_acquire)) {
@@ -109,6 +111,22 @@ EnsoniqSD1AudioProcessorEditor::~EnsoniqSD1AudioProcessorEditor()
 
 void EnsoniqSD1AudioProcessorEditor::timerCallback()
 {
+    // SYSEX TRANSMITING START
+    bool currentSysEx = audioProcessor.isTransmittingSysEx.load(std::memory_order_acquire);
+        
+        if (currentSysEx != lastSysExState) {
+            lastSysExState = currentSysEx;
+
+            loadMediaButton.setEnabled(!currentSysEx);
+            settingsButton.setEnabled(!currentSysEx);
+            
+            repaint();
+        }
+
+        else if (currentSysEx) {
+            repaint();
+        }
+    
     // Standard offline protection
     if (audioProcessor.isNonRealtime()) {
         audioProcessor.getFrameFlag().store(false, std::memory_order_relaxed);
@@ -248,6 +266,111 @@ void EnsoniqSD1AudioProcessorEditor::paint (juce::Graphics& g)
         g.setColour(juce::Colour(0xcc000000)); // Solid dark background for the settings panel
         g.fillRoundedRectangle(panelRect, 5.0f);
     }
+        
+        // ==============================================================================
+        // --- 4. MEDIA LOADED INDICATOR (Floppy / Cartridge) ---
+        // ==============================================================================
+
+        bool hasFloppy = audioProcessor.isFloppyLoaded.load(std::memory_order_acquire);
+        bool hasCart = audioProcessor.isCartLoaded.load(std::memory_order_acquire);
+
+        if (hasFloppy || hasCart) {
+
+            int viewIdx = audioProcessor.requestedViewIndex.load(std::memory_order_acquire);
+            int baseW = 2048;
+            int baseH = 925; // Default Compact
+            if (viewIdx == 1) baseH = 671;
+            else if (viewIdx == 2) baseH = 379;
+            else if (viewIdx == 3) baseH = 1476;
+
+            float scaleX = getWidth() / (float)baseW;
+            float scaleY = getHeight() / (float)baseH;
+
+            float vfdX = 0.0f;
+            float vfdY = 0.0f;
+
+            if (viewIdx == 0) { // Compact
+                vfdX = 304.0f; vfdY = 409.0f;
+            } else if (viewIdx == 1) { // Full
+                vfdX = 92.0f; vfdY = 366.0f;
+            } else if (viewIdx == 2) { // Rack
+                vfdX = 443.0f; vfdY = 222.0f;
+            } else if (viewIdx == 3) { // Tablet
+                vfdX = 289.0f; vfdY = 482.0f;
+            }
+
+            float finalX = vfdX * scaleX;
+            float finalY = vfdY * scaleY;
+
+            juce::Rectangle<float> indRect(finalX, finalY, 180.0f * scaleX, 24.0f * scaleY);
+
+            g.setColour(juce::Colour(0xcc111111));
+            g.fillRoundedRectangle(indRect, 4.0f);
+
+            float ledSize = 8.0f * scaleY;
+            g.setColour(juce::Colours::limegreen);
+            g.fillEllipse(indRect.getX() + (6.0f * scaleX), indRect.getCentreY() - (ledSize / 2.0f), ledSize, ledSize);
+
+            juce::Rectangle<float> iconBounds(indRect.getX() + (18.0f * scaleX), indRect.getY() + (4.0f * scaleY), 16.0f * scaleY, 16.0f * scaleY);
+
+                    juce::String text = audioProcessor.loadedMediaName;
+
+                    if (hasFloppy && floppyIcon != nullptr) {
+                        floppyIcon->drawWithin(g, iconBounds, juce::RectanglePlacement::centred, 1.0f);
+                    }
+                    else if (hasCart && cartIcon != nullptr) {
+                        cartIcon->drawWithin(g, iconBounds, juce::RectanglePlacement::centred, 1.0f);
+                    }
+                    else {
+                        // Fallback
+                        text = (hasFloppy ? "FLOPPY: " : "CART: ") + text;
+                    }
+
+                    // Filename
+                    g.setColour(juce::Colours::white);
+                    g.setFont(12.0f * scaleY);
+
+            g.drawText(text, indRect.withTrimmedLeft(38.0f * scaleX).withTrimmedRight(5.0f * scaleX), juce::Justification::centredLeft, true);
+        }
+    
+}
+
+void EnsoniqSD1AudioProcessorEditor::paintOverChildren(juce::Graphics& g)
+{
+    // ==============================================================================
+    // --- SYSEX TRANSMISSION OVERLAY ---
+    // ==============================================================================
+    if (audioProcessor.isTransmittingSysEx.load(std::memory_order_acquire)) {
+        g.fillAll(juce::Colour(0xaa000000));
+        
+        juce::Rectangle<float> panelRect(getWidth() / 2.0f - 200.0f, getHeight() / 2.0f - 75.0f, 400.0f, 150.0f);
+        
+        g.setColour(juce::Colour(0xee111111));
+        g.fillRoundedRectangle(panelRect, 8.0f);
+        
+        g.setColour(juce::Colours::orange);
+        g.drawRoundedRectangle(panelRect, 8.0f, 2.0f);
+        
+        g.setColour(juce::Colours::white);
+        g.setFont(22.0f);
+        g.drawText("Transmitting Sys-Ex Data...", panelRect.withTrimmedTop(20.0f).withHeight(30.0f), juce::Justification::centred);
+        
+        g.setColour(juce::Colours::lightgrey);
+        g.setFont(15.0f);
+        g.drawText("Please wait. Do not play notes or press buttons.", panelRect.withTrimmedTop(60.0f).withHeight(20.0f), juce::Justification::centred);
+        
+        // --- SPINNER ---
+        auto time = juce::Time::getMillisecondCounterHiRes();
+        float speed = 0.005f; // Speed
+        float angle = (float)std::fmod(time * speed, juce::MathConstants<double>::twoPi);
+        
+        juce::Path spinner;
+        spinner.addCentredArc(panelRect.getCentreX(), panelRect.getY() + 115.0f,
+                              14.0f, 14.0f, 0.0f, angle, angle + juce::MathConstants<float>::pi * 1.5f, true);
+        
+        g.setColour(juce::Colours::orange);
+        g.strokePath(spinner, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+    }
 }
 
 void EnsoniqSD1AudioProcessorEditor::resized()
@@ -304,7 +427,7 @@ void EnsoniqSD1AudioProcessorEditor::resized()
     int y = panelRect.getY() + 35;
     int startX = panelRect.getCentreX() - 170;
     int rowHeight = 25;
-    int spacing = (panelRect.getHeight() > 220) ? 15 : 5;
+    int spacing = (panelRect.getHeight() > 310) ? 15 : 5;
 
     bufferLabel.setBounds(startX, y, 180, rowHeight);
     bufferCombo.setBounds(startX + 190, y, 150, rowHeight);
@@ -314,7 +437,7 @@ void EnsoniqSD1AudioProcessorEditor::resized()
     viewCombo.setBounds(startX + 190, y, 150, rowHeight);
     y += rowHeight + spacing;
 
-    if (panelRect.getHeight() > 220) {
+    if (panelRect.getHeight() > 310) {
         if (isSettingsVisible) aboutLabel.setVisible(true);
         aboutLabel.setBounds(panelRect.getX() + 10, y, panelRect.getWidth() - 20, 85);
         y += 85 + spacing;
@@ -354,25 +477,65 @@ void EnsoniqSD1AudioProcessorEditor::mouseMove(const juce::MouseEvent& e) {
 
 void EnsoniqSD1AudioProcessorEditor::loadMediaButtonClicked()
 {
-    fileChooser = std::make_unique<juce::FileChooser>("Select Floppy Image or cartridge",
+    fileChooser = std::make_unique<juce::FileChooser>("Select Floppy Image, Cartridge or SYS-EX file",
         juce::File::getSpecialLocation(juce::File::userHomeDirectory),
-        "*.img;*.hfe;*.dsk;*.eda;*.crt;*.bin");
+        "*.img;*.hfe;*.dsk;*.eda;*.crt;*.bin;*.syx");
 
     auto folderChooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
 
     fileChooser->launchAsync(folderChooserFlags, [this](const juce::FileChooser& fc) {
         auto file = fc.getResult();
         if (file.existsAsFile()) {
-            std::lock_guard<std::mutex> lock(audioProcessor.mediaMutex);
-#ifdef _WIN32
-            audioProcessor.pendingFloppyPath = file.getFullPathName().toUTF8().getAddress();
-#else
-            audioProcessor.pendingFloppyPath = file.getFullPathName().toStdString();
-#endif
-            audioProcessor.requestFloppyLoad.store(true, std::memory_order_release);
-        }
-    });
-}
+            
+            // --- SYSEX FILE  ---
+            if (file.getFileExtension().toLowerCase() == ".syx") {
+
+                            juce::AlertWindow::showAsync (juce::MessageBoxOptions()
+                                .withIconType (juce::MessageBoxIconType::InfoIcon)
+                                .withTitle ("Prepare SD-1 for SYS-EX")
+                                .withMessage ("IMPORTANT: The SD-1 will ignore this file unless SYS-EX reception is enabled!\n\n"
+                                              "1. Press the SYSTEM/MIDI CONTROL button TWICE on the panel.\n"
+                                              "2. Set SYS-EX to ON.\n"
+                                              "3. Press SOUNDS or PRESETS to return to the main screen.\n\n"
+                                              "Is the synthesizer ready?")
+                                .withButton ("Transmit")
+                                .withButton ("Cancel"),
+                                [this, file] (int result)
+                                {
+
+                                    if (result == 1) {
+                                        audioProcessor.loadSysExFile(file);
+                                    }
+                                });
+                        }
+            // --- FLOPPY / CARTRIDGE  ---
+                        else {
+                                        std::lock_guard<std::mutex> lock(audioProcessor.mediaMutex);
+                        #ifdef _WIN32
+                                        audioProcessor.pendingFloppyPath = file.getFullPathName().toUTF8().getAddress();
+                        #else
+                                        audioProcessor.pendingFloppyPath = file.getFullPathName().toStdString();
+                        #endif
+                                        audioProcessor.loadedMediaName = file.getFileName();
+
+                                        if (file.getFileExtension().toLowerCase() == ".crt" || file.getFileExtension().toLowerCase() == ".bin") {
+                                            audioProcessor.pendingCartPath = audioProcessor.pendingFloppyPath;
+                                            audioProcessor.requestCartLoad.store(true, std::memory_order_release);
+                                            
+                                            audioProcessor.isCartLoaded.store(true, std::memory_order_release);
+                                            audioProcessor.isFloppyLoaded.store(false, std::memory_order_release);
+                                        } else {
+                                            audioProcessor.requestFloppyLoad.store(true, std::memory_order_release);
+                                            
+                                            audioProcessor.isFloppyLoaded.store(true, std::memory_order_release);
+                                            audioProcessor.isCartLoaded.store(false, std::memory_order_release);
+                                        }
+                                        
+                                        repaint();
+                                    }
+                    }
+                });
+            }
 
 void EnsoniqSD1AudioProcessorEditor::toggleSettings()
 {

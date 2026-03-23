@@ -23,6 +23,7 @@ public:
     ~EnsoniqSD1AudioProcessorEditor() override;
 
     void paint (juce::Graphics&) override;
+    void paintOverChildren(juce::Graphics& g) override;
     void resized() override;
     
     // Timer callback used for polling frame updates and layout changes
@@ -40,13 +41,13 @@ private:
     // Global settings
     void saveGlobalSettings();
     
-    juce::TextButton loadMediaButton { "Load Floppy/Cartridge" };
+    juce::TextButton loadMediaButton { "Load Floppy/Cartridge/SYX" };
     std::unique_ptr<juce::FileChooser> fileChooser;
     void loadMediaButtonClicked();
 
     // --- SETTINGS PANEL GUI COMPONENTS ---
     juce::TextButton settingsButton { "Settings / About" };
-    juce::GroupComponent settingsGroup { "settings_group", "Ensoniq(R) SD-1/32 Settings v0.9.7b" };
+    juce::GroupComponent settingsGroup { "settings_group", "Ensoniq(R) SD-1/32 Settings v0.9.7b2" };
     
     juce::Label bufferLabel { "buffer_label", "MAME(R) Engine buffer:" };
     juce::ComboBox bufferCombo;
@@ -64,12 +65,18 @@ private:
     bool isSettingsVisible = false;
     void toggleSettings();
     
+    std::unique_ptr<juce::Drawable> floppyIcon;
+    std::unique_ptr<juce::Drawable> cartIcon;
+    
     // Calculates and applies the optimal window size based on the active layout aspect ratio
     void updateWindowSize(); 
         
     // --- WINDOW SIZE TRACKING ---
     // Used by the Timer to detect when the MAME internal layout resolution changes
     int lastView = -1;
+    
+    // FOR SYSEX WINDOW
+    bool lastSysExState = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EnsoniqSD1AudioProcessorEditor)
 };

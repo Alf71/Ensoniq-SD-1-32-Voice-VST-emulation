@@ -24,6 +24,7 @@ Everything. Check the original manual here: [SD-1 Manual at Polynominal](https:/
 
 # Features:
 - Windows 10+ 64 bit VST3, Mac Intel+ARM Universal Binary VST3
+- **NEW: VFX, VFX-SD, SD1 .SYX SYS-EX file import** Read the FAQ for more info!
 - **NEW: FULL automation** (All keys, sliders and buttons. Now you can save presets: Saving requires holding down PRESETS button and pressing a BANK button), full MIDI CC controlling, polyphonic aftertouch
 - **NEW: Global settings saving** 
 - VST3 state saving
@@ -58,37 +59,93 @@ Everything. Check the original manual here: [SD-1 Manual at Polynominal](https:/
 - IMPORTANT - ROM Files Required!<br/>
   Due to copyright reasons, the required Ensoniq ROM files are NOT included.
   To make the plugin work:
-* Create a folder named EnsoniqSD1 in your user's Documents folder:
-- Win C:\Users\yourusername\Documents
-- macOS /yourusername/Documents/
-* Obtain the Ensoniq SD-1 32 variant AND Ensoniq 2x40 VFD ROM files and place EXACTLY these files in that folder AND zip them to sd132.zip.<br/>
-  Filename | SHA256
-  - esqvfd_font_vfx.bin<br/>ab2f7ddc6ab7fafaf07985d01788197849cdaeb5a4a7d9f2f85098dfd65edf01
-  - sd1_32_402_hi.bin<br/>90ae35de8661f5de0793b6ea59a4d6524e90c0828a29e6ea8906ff759116136d
-  - sd1_32_402_lo.bin<br/>6b0c1235c4f813ce8698e89d66933e9c7c9168f4a095c9e2a50add7fe729481c
-  - sd1_410_hi.bin<br/>1d6d6150373fb070da8b1a6da57762749bda9210e0ca5536441bb8194a3cafb7
-  - sd1_410_lo.bin<br/>e3e42beca41989561c0d2a8266e48549561650a7606bb8a0d75b438847e8bd0c
-  - u34.bin<br/>7a6e6e76da7eb8de5cbc3a0a2bfb27a461e312facdcc0b7ecc42b9d1eb261e12
-  - u35.bin<br/>1df911a97e0e5a334d9345ba5e47eac7794d083282012f7ecf70901b88cf7e08
-  - u36.bin<br/>2fdb401bea78eb323fa55408760a73319aeae68b465f193dc7a46d1b21277cdd
-  - u37.bin<br/>e08931013c8aca2460b4f2c3512e1d3e9a610a7f921e22012bb13bd23a3e56d7
-  - u38.bin<br/>2f185a185961a1c14472c2b706642c0d9e7a0792d57d946a349840905782e5ca
-* The final structure of sd132.zip in your Documents/EnsoniqSD1 folder looks like this:<br/>
-![sd132.zip](https://github.com/sojusrecords/Ensoniq-SD-1-32-Voice-VST-emulation/blob/main/roms.png)
+  * Create a folder named EnsoniqSD1 in your user's Documents folder:
+    - Win C:\Users\yourusername\Documents
+    - macOS /yourusername/Documents/
+  * Obtain the Ensoniq SD-1 32 variant AND Ensoniq 2x40 VFD ROM files and place EXACTLY these files in that folder AND zip them to sd132.zip.<br/>
+
+    Filename | SHA256
+    - esqvfd_font_vfx.bin<br/>ab2f7ddc6ab7fafaf07985d01788197849cdaeb5a4a7d9f2f85098dfd65edf01
+    - sd1_32_402_hi.bin<br/>90ae35de8661f5de0793b6ea59a4d6524e90c0828a29e6ea8906ff759116136d
+    - sd1_32_402_lo.bin<br/>6b0c1235c4f813ce8698e89d66933e9c7c9168f4a095c9e2a50add7fe729481c
+    - sd1_410_hi.bin<br/>1d6d6150373fb070da8b1a6da57762749bda9210e0ca5536441bb8194a3cafb7
+    - sd1_410_lo.bin<br/>e3e42beca41989561c0d2a8266e48549561650a7606bb8a0d75b438847e8bd0c
+    - u34.bin<br/>7a6e6e76da7eb8de5cbc3a0a2bfb27a461e312facdcc0b7ecc42b9d1eb261e12
+    - u35.bin<br/>1df911a97e0e5a334d9345ba5e47eac7794d083282012f7ecf70901b88cf7e08
+    - u36.bin<br/>2fdb401bea78eb323fa55408760a73319aeae68b465f193dc7a46d1b21277cdd
+    - u37.bin<br/>e08931013c8aca2460b4f2c3512e1d3e9a610a7f921e22012bb13bd23a3e56d7
+    - u38.bin<br/>2f185a185961a1c14472c2b706642c0d9e7a0792d57d946a349840905782e5ca<br/>
+
+  * The final structure of sd132.zip in your Documents/EnsoniqSD1 folder looks like this:<br/>
+    ![sd132.zip](https://github.com/sojusrecords/Ensoniq-SD-1-32-Voice-VST-emulation/blob/main/roms.png)<br/>
   
-- Optional: If you want to run the internal sequencer, you need the original disk image:
-  - Ensoniq SD1 Sequencer OS v410 (SD-1 800K type)
-  - How to load: Attach the disk image using "Load Floppy/Cartridge". Press Storage, then select DISK. Press LOAD. The display will show the Disk Load page with the File Type selected. Move the data entry slider all the way up to select TYPE=SEQUENCER OS.
+  - Optional: If you want to run the internal sequencer, you need the original disk image:
+    - Ensoniq SD1 Sequencer OS v410 (SD-1 800K type)
+    - How to load: Attach the disk image using "Load Floppy/Cartridge". Press Storage, then select DISK. Press LOAD. The display will show the Disk Load page with the File Type selected. Move the data entry slider all the way up to select TYPE=SEQUENCER OS.
 
 # Troubleshooting
 - The plugin is checking the contents of sd132.zip in your Documents/EnsoniqSD1 folder. If something is not right, then it will tell you.
 - On macOS: if 'sudo xattr -rd...' fails, try codesign the plugin:
   - Open a terminal window, install Xcode Command Line Tools if needed: ```xcode-select --install```
   - ```sudo codesign -f -s /Library/Audio/Plug-Ins/VST3/EnsoniqSD1.vst3```
-- Whitelist the plugin in your antivirus app. The plugin is writing some data to temp folder and to your Documents/EnsoniqSD1 folder (e.g. settings.xml)
+- Whitelist the plugin in your antivirus app. The plugin is writing some data to temp folder (e.g. nvram and osram files, lua plugins) and to your Documents/EnsoniqSD1 folder (e.g. settings.xml)
 - Your sequencer is blacklisting the plugin: if the plugin scanner provides error message or a log file then send it to us.
 - If the plugin is loaded but there's only "Load Floppy/Cartridge" and "Settings" buttons and blank window: the internal MAME engine is not loaded. Check if your OS/PC/MAC is capable to run it. 
-- Reset global settings: go to Documents/EnsoniqSD1 and delete the file "settings.xml"
+- Reset global settings: go to Documents/EnsoniqSD1 and delete the file "settings.xml" and delete temp files
+
+# FAQ
+<details>
+  <summary>How do I load my old SysEx (.syx) preset banks?</summary>
+
+Loading SysEx files works exactly like the original 1990 hardware, simulating a physical MIDI cable connection at a 31250 baud rate.
+
+Step-by-step:
+
+  - **IMPORTANT** Enable Sys-Ex on the Synth: On the SD-1 front panel, press System/MIDI CONTROL button TWICE, and set SYS-EX to ON.
+
+  - Go to a safe screen: Press the Sounds or Presets button to return to the main playing screen.
+
+  - Load the file: Click the Load Media button on the plugin interface and select your .syx file. A standard 40KB bank takes about 12 to 15 seconds to transfer. This is an authentic hardware limitation (the maximum speed of a physical MIDI cable).
+
+  - You will see a "Transmitting Sys-Ex Data..." overlay on the screen. Once the overlay disappears, the synth will instantly update its RAM, and your presets will be ready to play!
+
+  - You can also save the presets to a disk image (here you can find an SD-1 formatted empty disk image.)
+</details>
+
+<details>
+  <summary>How do I load Floppy Disk Images (.img etc.) or Cartridges (.crt etc.)?</summary>
+
+   - Click the Load Media button on the left side of the plugin and select your file.
+    Once loaded, a small green retro LED indicator will appear in the bottom-left corner of the VFD display showing ```FLOPPY: yourfile.img``` or ```CART: yourfile.crt```.
+   - From there, press the Storage button on the SD-1 panel, select Disk or Cartridge, and use the Load function just like on the real machine.
+</details>
+
+<details>
+  <summary>Audio Settings: Why can't I set the Buffer to 0?</summary>
+This plugin runs a cycle-accurate emulation of the original Motorola 68000 CPU and Ensoniq OTIS chips. On the real physical SD-1, the time it takes from pressing a key to hearing a sound is approximately 24.4 milliseconds.
+
+Because the MAME emulator runs asynchronously on its own background thread, we need a tiny "safety pool" (the plugin buffer) to ensure the audio stream never drops out.
+
+  - A setting of 256 samples is incredibly fast and highly recommended for live playing.
+
+  - The plugin reports its exact hardware latency to your DAW automatically (Plugin Delay Compensation), so during playback and rendering, your tracks will always be perfectly in sync and on the grid!
+
+</details>
+
+<details>
+  <summary>Why there is no fancy preset manager like the ones in Usual Suspects emulations?</summary>
+The Usual Suspects are also developing an SD-1 emulation, so it's guaranteed that their work will be far superior to ours. Just wait and see.
+</details>
+
+<details>
+  <summary>Why there is no AU version?</summary>
+We are working on it. The AU version is really tricky; we haven't managed to create a build that works properly yet either (there are some AU specific codes already.)
+</details>
+
+<details>
+  <summary>Why there is no Linux build?</summary>
+Maybe in the future, or do it yourself if you can :)
+</details>
 
 # License and credits
 

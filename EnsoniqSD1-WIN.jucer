@@ -10,7 +10,10 @@
               pluginAUMainType="'augn'" companyEmail="sjs@sojusrecords.com"
               cppLanguageStandard="20">
   <MAINGROUP id="OpvzjD" name="Ensoniq SD-1">
-    <GROUP id="{3F88782C-AB7D-82EE-F4B6-16FDEB0AE012}" name="Source">
+    <GROUP id="{B55D6966-246C-C5C4-DBF6-55CB66D6CDB4}" name="Resources">
+      <FILE id="S8WBrn" name="q.svg" compile="0" resource="1" file="Source/q.svg"/>
+      <FILE id="PSdVGK" name="cart.svg" compile="0" resource="1" file="Source/cart.svg"/>
+      <FILE id="hK0Kgx" name="floppy.svg" compile="0" resource="1" file="Source/floppy.svg"/>
       <FILE id="kjPtSe" name="labels_rack.png" compile="0" resource="1" file="Source/labels_rack.png"/>
       <FILE id="vB9jmy" name="labels_compact.png" compile="0" resource="1"
             file="Source/labels_compact.png"/>
@@ -19,6 +22,8 @@
       <FILE id="yKRllz" name="labels_full.png" compile="0" resource="1" file="Source/labels_full.png"/>
       <FILE id="Lyh9Lm" name="mame_plugins.zip" compile="0" resource="1"
             file="Source/mame_plugins.zip"/>
+    </GROUP>
+    <GROUP id="{3F88782C-AB7D-82EE-F4B6-16FDEB0AE012}" name="Source">
       <FILE id="IWhokv" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="YhSlmb" name="PluginProcessor.h" compile="0" resource="0"
