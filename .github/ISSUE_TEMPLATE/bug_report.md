@@ -23,16 +23,12 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Please complete the following information:**
 
-**Smartphone (please complete the following information):**
  - Device: [e.g. Macbook Pro M1]
  - OS: [e.g. macOS Ventura]
  - DAW [e.g. FL Studio 2025, ABleton Live 12]
- - Version [e.g. 22]
+ - Version [e.g. v.0.9.7b2]
 
 **Additional context**
 Add any other context about the problem here.
