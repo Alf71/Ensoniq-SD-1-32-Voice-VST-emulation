@@ -105,7 +105,7 @@ Step-by-step:
 
   - Go to a safe screen: Press the Sounds or Presets button to return to the main playing screen.
 
-  - Load the file: Click the Load Media button on the plugin interface and select your .syx file. A standard 40KB bank takes about 12 to 15 seconds to transfer. This is an authentic hardware limitation (the maximum speed of a physical MIDI cable).
+  - Load the file: Click the Load Media button on the plugin interface and select your .syx file. A standard 64KB bank takes about 12 to 15 seconds to transfer. This is an authentic hardware limitation (the maximum speed of a physical MIDI cable).
 
   - You will see a "Transmitting Sys-Ex Data..." overlay on the screen. Once the overlay disappears, the synth will instantly update its RAM, and your presets will be ready to play!
 
