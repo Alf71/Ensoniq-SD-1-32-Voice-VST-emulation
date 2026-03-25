@@ -90,8 +90,8 @@ jobs:
       run: |
         cd Builds/LinuxMakefile
 
-        export CPPFLAGS="-I$GITHUB_WORKSPACE/juce/modules -I$GITHUB_WORKSPACE/juce/modules/juce_audio_processors/format_types/VST3_SDK"
-        export CXXFLAGS="${{ matrix.compiler_flags }} -I$GITHUB_WORKSPACE/juce/modules"
+        echo 'JUCE_CPPFLAGS += -I../../juce/modules -I../../juce/modules/juce_audio_processors/format_types/VST3_SDK' >> Makefile
+        echo 'CXXFLAGS += ${{ matrix.compiler_flags }}' >> Makefile
         export PKG_CONFIG_PATH=${{ steps.sdl.outputs.prefix }}/lib/pkgconfig:$PKG_CONFIG_PATH
         
         make CONFIG=Release -j$(nproc)
