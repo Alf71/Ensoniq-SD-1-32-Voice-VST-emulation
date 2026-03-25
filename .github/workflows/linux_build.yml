@@ -79,11 +79,11 @@ jobs:
     - name: Compile JUCE VST3 Wrapper (${{ matrix.name }})
       run: |
         cd Builds/LinuxMakefile
-        sed -i 's|../../juce|../../juce/modules|g' Makefile
+
+        export CPPFLAGS="-I$GITHUB_WORKSPACE/juce/modules"
+        export CXXFLAGS="${{ matrix.compiler_flags }} -I$GITHUB_WORKSPACE/juce/modules"
         export PKG_CONFIG_PATH=${{ steps.sdl.outputs.prefix }}/lib/pkgconfig:$PKG_CONFIG_PATH
         
-        # We inject the AVX2 flags directly into the JUCE Makefile environment using CXXFLAGS
-        export CXXFLAGS="${{ matrix.compiler_flags }}"
         make CONFIG=Release -j$(nproc)
 
     - name: Upload VST3 plugin artifact (${{ matrix.name }})
