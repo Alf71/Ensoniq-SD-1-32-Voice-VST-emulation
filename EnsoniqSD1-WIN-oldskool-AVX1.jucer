@@ -55,7 +55,7 @@
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"
                JUCE_USE_FLAC="0" JUCE_WEB_BROWSER="0"/>
   <EXPORTFORMATS>
-    <VS2026 targetFolder="Builds/VisualStudio2026" externalLibraries="frontend.lib&#10;mame_sd132.lib&#10;emu.lib&#10;ocore_windows.lib&#10;utils.lib&#10;optional.lib&#10;expat.lib&#10;zlib.lib&#10;portmidi.lib&#10;flac.lib&#10;7z.lib&#10;softfloat.lib&#10;softfloat3.lib&#10;utf8proc.lib&#10;jpeg.lib&#10;sqlite3.lib&#10;zstd.lib&#10;formats.lib&#10;dasm.lib&#10;portaudio.lib&#10;lua.lib&#10;lualibs.lib&#10;asmjit.lib&#10;bgfx.lib&#10;bimg.lib&#10;bx.lib&#10;ymfm.lib&#10;wdlfft.lib&#10;linenoise.lib&#10;qtdbg_windows.lib&#10;osd_windows.lib&#10;ws2_32.lib&#10;winmm.lib&#10;dinput8.lib&#10;dxguid.lib&#10;opengl32.lib&#10;dsound.lib&#10;xinput.lib&#10;ws2_32.lib&#10;comctl32.lib&#10;shlwapi.lib"
+    <VS2026 targetFolder="Builds/VisualStudio2026/AVX1" externalLibraries="frontend.lib&#10;mame_sd132.lib&#10;emu.lib&#10;ocore_windows.lib&#10;utils.lib&#10;optional.lib&#10;expat.lib&#10;zlib.lib&#10;portmidi.lib&#10;flac.lib&#10;7z.lib&#10;softfloat.lib&#10;softfloat3.lib&#10;utf8proc.lib&#10;jpeg.lib&#10;sqlite3.lib&#10;zstd.lib&#10;formats.lib&#10;dasm.lib&#10;portaudio.lib&#10;lua.lib&#10;lualibs.lib&#10;asmjit.lib&#10;bgfx.lib&#10;bimg.lib&#10;bx.lib&#10;ymfm.lib&#10;wdlfft.lib&#10;linenoise.lib&#10;qtdbg_windows.lib&#10;osd_windows.lib&#10;ws2_32.lib&#10;winmm.lib&#10;dinput8.lib&#10;dxguid.lib&#10;opengl32.lib&#10;dsound.lib&#10;xinput.lib&#10;ws2_32.lib&#10;comctl32.lib&#10;shlwapi.lib"
             extraDefs="ASIO_STANDALONE=1" extraCompilerFlags="/Ot /Oi /arch:AVX1 /fp:fast /Ob2"
             windowsTargetPlatformVersion="10.0">
       <CONFIGURATIONS>
