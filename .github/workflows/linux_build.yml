@@ -33,7 +33,7 @@ jobs:
              libxrandr-dev libxcursor-dev curl libcurl4-openssl-dev \
              libfontconfig1-dev python3 pkg-config \
              qtbase5-dev qt5-qmake qtbase5-dev-tools \
-             libpng-dev libjpeg-dev
+             libpng-dev libjpeg-dev libharfbuzz-dev libfreetype6-dev
 
     # -------------------------------------------------------------------
     # Build SDL3, SDL3_ttf, and SDL3_image from source.
@@ -47,7 +47,7 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: /usr/local
-        key: sdl3-ubuntu24-3.2.10
+        key: sdl3-ubuntu24-3.2.10-b
 
     - name: Build SDL3 from source
       if: steps.cache-sdl3.outputs.cache-hit != 'true'
@@ -68,7 +68,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DSDLTTF_SHARED=ON -DSDLTTF_STATIC=OFF \
-              -DSDLTTF_VENDORED=ON
+              -DSDLTTF_VENDORED=OFF
         cmake --build SDL3_ttf-build -j$(nproc)
         sudo cmake --install SDL3_ttf-build
 
@@ -80,7 +80,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DSDLIMAGE_SHARED=ON -DSDLIMAGE_STATIC=OFF \
-              -DSDLIMAGE_VENDORED=ON
+              -DSDLIMAGE_VENDORED=OFF
         cmake --build SDL3_image-build -j$(nproc)
         sudo cmake --install SDL3_image-build
 
@@ -89,7 +89,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: /usr/local
-        key: sdl3-ubuntu24-3.2.10
+        key: sdl3-ubuntu24-3.2.10-b
 
     - name: Refresh linker cache after SDL3 install
       run: sudo ldconfig
