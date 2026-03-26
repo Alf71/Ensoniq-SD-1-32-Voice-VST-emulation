@@ -82,7 +82,7 @@ jobs:
              USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 \
              OPT_FLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
 
-    # Save immediately after successful MAME compile, before JUCE steps.
+    # Save immediately after successful MAME compile, before JUCE steps. Hooray!
     - name: Save MAME cache
       if: steps.cache-mame.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
