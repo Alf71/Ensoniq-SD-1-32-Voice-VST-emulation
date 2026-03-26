@@ -44,35 +44,39 @@ jobs:
         version-sdl-ttf: 3-latest
         version-sdl-image: 3-latest
 
+    # Cache key covers: MAME version, matrix variant, and your patch files.
+    # The cache path includes both the source tree AND the compiled .a libraries
+    # that live inside it, so a cache hit skips cloning + compiling entirely.
     - name: MAME Cache Setup
       id: cache-mame
       uses: actions/cache@v4
       with:
         path: mame
         key: mame-0286-${{ matrix.name }}-${{ hashFiles('Mame_Patches/**') }}
+        # save-always ensures the cache is written even when a later step fails,
+        # so a partially-warmed cache is never silently discarded.
         save-always: true
 
     - name: Clone MAME v0.286 source code
-      # Clone MAME inside the workspace so relative paths in Projucer (like ../../mame/src) work perfectly
+      # Clone MAME inside the workspace so relative paths (like ../../mame/src) work.
       if: steps.cache-mame.outputs.cache-hit != 'true'
       run: |
         git clone --depth 1 --branch mame0286 https://github.com/mamedev/mame.git mame
 
     - name: Clone JUCE 8 Framework
-      # JUCE 
       run: |
         git clone --depth 1 --branch 8.0.12 https://github.com/juce-framework/JUCE.git juce
 
     - name: Apply MAME patches (Copy modified files)
-      # Overwrite original MAME files with your modified versions from the Mame_Patches folder
+      # Overwrite original MAME files with your modified versions from Mame_Patches/
       if: steps.cache-mame.outputs.cache-hit != 'true'
       run: |
         echo "Copying patched files..."
         cp Mame_Patches/esq5505.cpp mame/src/devices/sound/esq5505.cpp
-        cp Mame_Patches/ui.cpp mame/src/frontend/mame/ui/ui.cpp
-        cp Mame_Patches/sd132.lay mame/src/mame/layout/sd132.lay
+        cp Mame_Patches/ui.cpp      mame/src/frontend/mame/ui/ui.cpp
+        cp Mame_Patches/sd132.lay   mame/src/mame/layout/sd132.lay
         
-        # Verify that the copy was successful
+        # Verify copies succeeded
         ls -l mame/src/devices/sound/esq5505.cpp
         ls -l mame/src/frontend/mame/ui/ui.cpp
         ls -l mame/src/mame/layout/sd132.lay
@@ -81,27 +85,64 @@ jobs:
       if: steps.cache-mame.outputs.cache-hit != 'true'
       run: |
         cd mame
-        # Export the pkg-config path so MAME finds the SDL3 library we just built
         export PKG_CONFIG_PATH=${{ steps.sdl.outputs.prefix }}/lib/pkgconfig:$PKG_CONFIG_PATH
-        
-        # -j$(nproc) automatically uses all available CPU cores on the GitHub runner for faster compilation
-        make SUBTARGET=sd132 SOURCES=src/mame/ensoniq/esq5505.cpp USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 OPT_FLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
+        # -j$(nproc) uses all available CPU cores for faster compilation
+        make SUBTARGET=sd132 SOURCES=src/mame/ensoniq/esq5505.cpp \
+             USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 \
+             OPT_FLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
+
+    # -----------------------------------------------------------------------
+    # Regenerate JuceLibraryCode/ using the headless Projucer.
+    #
+    # The Projucer-generated JuceLibraryCode/ folder (containing JuceHeader.h,
+    # AppConfig.h, and the include_juce_*.cpp unity-build files) is listed in
+    # .gitignore and therefore NOT present in the checked-out repository.
+    # Without it, the compiler cannot find JuceHeader.h and the
+    # juce_TargetPlatform.h "No global header file was included!" error fires.
+    #
+    # We build the Projucer from the cloned JUCE source, then run it with
+    # --resave against the Linux .jucer file to regenerate the missing files.
+    # -----------------------------------------------------------------------
+    - name: Build Projucer (headless)
+      run: |
+        cd juce/extras/Projucer/Builds/LinuxMakefile
+        make CONFIG=Release -j$(nproc)
+
+    - name: Regenerate JuceLibraryCode via Projucer
+      run: |
+        # Locate the Linux .jucer file in the repo root
+        JUCER_FILE=$(find "$GITHUB_WORKSPACE" -maxdepth 1 -name "*Linux*.jucer" -o -name "*linux*.jucer" | head -n 1)
+        # Fall back to any .jucer if no Linux-specific one exists
+        if [ -z "$JUCER_FILE" ]; then
+          JUCER_FILE=$(find "$GITHUB_WORKSPACE" -maxdepth 1 -name "*.jucer" | head -n 1)
+        fi
+        echo "Using Projucer file: $JUCER_FILE"
+        juce/extras/Projucer/Builds/LinuxMakefile/build/Projucer --resave "$JUCER_FILE"
 
     - name: Compile JUCE VST3 Wrapper (${{ matrix.name }})
       run: |
         cd Builds/LinuxMakefile
 
-        export CPPFLAGS="-I$GITHUB_WORKSPACE/juce/modules -I$GITHUB_WORKSPACE/juce/modules/juce_audio_processors/format_types/VST3_SDK"
-        export CXXFLAGS="${{ matrix.compiler_flags }} -I$GITHUB_WORKSPACE/juce/modules -I$GITHUB_WORKSPACE/juce/modules/juce_audio_processors/format_types/VST3_SDK"
-        
+        # JuceLibraryCode/ must be on the include path so the compiler finds
+        # JuceHeader.h and AppConfig.h (generated by the Projucer step above).
+        export CPPFLAGS="\
+          -I$GITHUB_WORKSPACE/JuceLibraryCode \
+          -I$GITHUB_WORKSPACE/juce/modules \
+          -I$GITHUB_WORKSPACE/juce/modules/juce_audio_processors/format_types/VST3_SDK"
+        export CXXFLAGS="\
+          ${{ matrix.compiler_flags }} \
+          -I$GITHUB_WORKSPACE/JuceLibraryCode \
+          -I$GITHUB_WORKSPACE/juce/modules \
+          -I$GITHUB_WORKSPACE/juce/modules/juce_audio_processors/format_types/VST3_SDK"
+
         export PKG_CONFIG_PATH=${{ steps.sdl.outputs.prefix }}/lib/pkgconfig:$PKG_CONFIG_PATH
-        
+
         make CONFIG=Release JUCE_CPPFLAGS="$CPPFLAGS" JUCE_CXXFLAGS="$CXXFLAGS" -j$(nproc)
 
     - name: Upload VST3 plugin artifact (${{ matrix.name }})
       uses: actions/upload-artifact@v4
       with:
-        # This will create two separate ZIP downloads: 
+        # Creates two separate ZIP downloads:
         # "Ensoniq_SD1_Linux_VST3_Generic" and "Ensoniq_SD1_Linux_VST3_AVX2"
         name: Ensoniq_SD1_Linux_VST3_${{ matrix.name }}
         path: Builds/LinuxMakefile/build/*.vst3
