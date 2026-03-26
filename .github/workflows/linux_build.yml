@@ -27,20 +27,72 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential ninja-build \
+        sudo apt-get install -y build-essential ninja-build cmake \
              libasound2-dev libx11-dev libxinerama-dev libxext-dev \
              libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev \
              libxrandr-dev libxcursor-dev curl libcurl4-openssl-dev \
-             libsdl2-dev libsdl2-ttf-dev libfontconfig1-dev python3 pkg-config \
-             qtbase5-dev qt5-qmake qtbase5-dev-tools
+             libfontconfig1-dev python3 pkg-config \
+             qtbase5-dev qt5-qmake qtbase5-dev-tools \
+             libpng-dev libjpeg-dev
 
-    - name: Install SDL3
-      uses: libsdl-org/setup-sdl@main
-      id: sdl
+    # -------------------------------------------------------------------
+    # Build SDL3, SDL3_ttf, and SDL3_image from source.
+    # Ubuntu 24.04 apt repos don't ship SDL3 packages, and the
+    # libsdl-org/setup-sdl action doesn't support this platform.
+    # We install into /usr/local so pkg-config and the linker find them
+    # automatically without any extra PATH/LDFLAGS gymnastics.
+    # -------------------------------------------------------------------
+    - name: Cache SDL3
+      id: cache-sdl3
+      uses: actions/cache/restore@v4
       with:
-        version: 3-latest
-        version-sdl-ttf: 3-latest
-        version-sdl-image: 3-latest
+        path: /usr/local
+        key: sdl3-ubuntu24-3.2.10
+
+    - name: Build SDL3 from source
+      if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      run: |
+        git clone --depth 1 --branch release-3.2.10 https://github.com/libsdl-org/SDL.git SDL3-src
+        cmake -S SDL3-src -B SDL3-build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DSDL_SHARED=ON -DSDL_STATIC=OFF
+        cmake --build SDL3-build -j$(nproc)
+        sudo cmake --install SDL3-build
+
+    - name: Build SDL3_ttf from source
+      if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      run: |
+        git clone --depth 1 --branch release-3.2.2 https://github.com/libsdl-org/SDL_ttf.git SDL3_ttf-src
+        cmake -S SDL3_ttf-src -B SDL3_ttf-build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DSDLTTF_SHARED=ON -DSDLTTF_STATIC=OFF \
+              -DSDLTTF_VENDORED=ON
+        cmake --build SDL3_ttf-build -j$(nproc)
+        sudo cmake --install SDL3_ttf-build
+
+    - name: Build SDL3_image from source
+      if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      run: |
+        git clone --depth 1 --branch release-3.2.4 https://github.com/libsdl-org/SDL_image.git SDL3_image-src
+        cmake -S SDL3_image-src -B SDL3_image-build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DSDLIMAGE_SHARED=ON -DSDLIMAGE_STATIC=OFF \
+              -DSDLIMAGE_VENDORED=ON
+        cmake --build SDL3_image-build -j$(nproc)
+        sudo cmake --install SDL3_image-build
+
+    - name: Save SDL3 cache
+      if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: /usr/local
+        key: sdl3-ubuntu24-3.2.10
+
+    - name: Refresh linker cache after SDL3 install
+      run: sudo ldconfig
 
     # -------------------------------------------------------------------
     # MAME cache: restore first, save immediately after compile.
@@ -50,7 +102,7 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: mame
-        key: mame-0286-v2-${{ matrix.name }}-${{ hashFiles('Mame_Patches/**') }}
+        key: mame-0286-v3-${{ matrix.name }}-${{ hashFiles('Mame_Patches/**') }}
 
     - name: Clone MAME v0.286
       if: steps.cache-mame.outputs.cache-hit != 'true'
@@ -75,16 +127,8 @@ jobs:
       if: steps.cache-mame.outputs.cache-hit != 'true'
       run: |
         cd mame
-        export PKG_CONFIG_PATH=${{ steps.sdl.outputs.prefix }}/lib/pkgconfig:$PKG_CONFIG_PATH
-        
-        export C_INCLUDE_PATH="${{ steps.sdl.outputs.prefix }}/include"
-        export CPLUS_INCLUDE_PATH="${{ steps.sdl.outputs.prefix }}/include"
-        
-        ls -la ${{ steps.sdl.outputs.prefix }}/include || true
-        
         make SUBTARGET=sd132 SOURCES=src/mame/ensoniq/esq5505.cpp \
-             OSD=sdl3 \
-             USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 \
+             OSD=sdl3 USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 \
              OPT_FLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
 
     - name: Save MAME cache
@@ -92,41 +136,22 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: mame
-        key: mame-0286-v2-${{ matrix.name }}-${{ hashFiles('Mame_Patches/**') }}
+        key: mame-0286-v3-${{ matrix.name }}-${{ hashFiles('Mame_Patches/**') }}
 
     - name: Build Projucer
       run: |
         cd juce/extras/Projucer/Builds/LinuxMakefile
         make CONFIG=Release -j$(nproc)
 
-    # -------------------------------------------------------------------
-    # Patch the .jucer before --resave to fix two issues that can't be
-    # reliably committed from a developer machine:
-    #
-    # 1. useGlobalPath="1" -> "0": tells Projucer to use the MODULEPATH
-    #    entries rather than looking up a local settings file that doesn't
-    #    exist on the runner.
-    #
-    # 2. MODULEPATH path="..." -> "juce/modules": paths must be relative
-    #    to the .jucer file location (repo root). Whatever path the
-    #    developer had on their machine is replaced with the correct value
-    #    pointing at our freshly cloned juce/ directory.
-    #
-    # 3. pluginFormats: strip buildStandalone and buildAU — Standalone
-    #    requires extra SDL3 link targets we don't need, AU is macOS-only.
-    # -------------------------------------------------------------------
     - name: Patch .jucer for CI
       run: |
-        # Fix 1: use local module paths, not global Projucer settings
+        # useGlobalPath="1" -> "0": use local MODULEPATH entries
         sed -i 's/useGlobalPath="1"/useGlobalPath="0"/g' EnsoniqSD1-LINUX.jucer
-
-        # Fix 2: repoint all MODULEPATH entries to our cloned juce/
+        # Repoint all MODULEPATH entries to our cloned juce/
         sed -i 's|<MODULEPATH id="\([^"]*\)" path="[^"]*"/>|<MODULEPATH id="\1" path="juce/modules"/>|g' EnsoniqSD1-LINUX.jucer
-
-        # Fix 3: VST3 only — remove Standalone and AU targets
+        # VST3 only — no Standalone, no AU
         sed -i 's/pluginFormats="[^"]*"/pluginFormats="buildVST3"/' EnsoniqSD1-LINUX.jucer
-        
-        # Fix 4: Remove qtdbg_sdl3 from externalLibraries since USE_QTDEBUG=0
+        # Remove qtdbg_sdl3 (only needed when USE_QTDEBUG=1)
         sed -i 's/qtdbg_sdl3&#10;//g' EnsoniqSD1-LINUX.jucer
 
         echo "Patched values:"
@@ -142,18 +167,10 @@ jobs:
     - name: Compile JUCE VST3 (${{ matrix.name }})
       run: |
         cd Builds/LinuxMakefile
-
-        # SDL3 is installed into a custom prefix by setup-sdl.
-        export PKG_CONFIG_PATH=${{ steps.sdl.outputs.prefix }}/lib/pkgconfig:$PKG_CONFIG_PATH
-        export LDFLAGS="-L${{ steps.sdl.outputs.prefix }}/lib"
-
-        # CXXFLAGS appends the AVX2 flag (empty for Generic).
-        # Do NOT pass JUCE_CPPFLAGS or JUCE_CXXFLAGS — overriding those
-        # variables drops the Makefile's forced -include JuceHeader.h and
-        # MAME header paths, causing "No global header file" and emu.h errors.
+        # SDL3 is in /usr/local — already on the default linker path after ldconfig.
+        # Only inject AVX2 flag; do NOT override JUCE_CPPFLAGS/JUCE_CXXFLAGS.
         make CONFIG=Release \
              CXXFLAGS="${{ matrix.compiler_flags }}" \
-             LDFLAGS="$LDFLAGS" \
              -j$(nproc)
 
     - name: Upload VST3 artifact (${{ matrix.name }})
