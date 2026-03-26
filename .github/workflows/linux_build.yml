@@ -82,7 +82,7 @@ jobs:
              USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 \
              OPT_FLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
 
-    # Save immediately after successful MAME compile, before JUCE steps. Hooray!
+    # Save immediately after successful MAME compile, before JUCE steps.
     - name: Save MAME cache
       if: steps.cache-mame.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
@@ -93,13 +93,16 @@ jobs:
     # -------------------------------------------------------------------
     # Build Projucer and regenerate JuceLibraryCode/.
     #
-    # PREREQUISITE: The .jucer file must have its JUCE module paths set
-    # to relative paths pointing at the juce/ clone:
-    #   - "Path to JUCE" (jucePath):     ../../juce
-    #   - All module paths (MODULEPATH): ../../juce/modules
-    # Set these in Projucer on your machine and commit the .jucer file.
-    # The paths are relative to Builds/LinuxMakefile/ and resolve correctly
-    # on the runner where JUCE is cloned at $GITHUB_WORKSPACE/juce/.
+    # The Projucer-generated Makefile already contains all necessary
+    # include paths (MAME headers, JuceLibraryCode, modules) and the
+    # forced "-include JuceHeader.h" flag. We must NOT override
+    # JUCE_CPPFLAGS or JUCE_CXXFLAGS — doing so replaces the Makefile's
+    # own flags and drops both the forced include (causing the
+    # "No global header file" error) and the MAME header paths
+    # (causing "emu.h not found").
+    #
+    # The only thing we inject is the AVX2 flag for that matrix variant,
+    # via CXXFLAGS which appends to the Makefile's existing flags.
     # -------------------------------------------------------------------
     - name: Build Projucer
       run: |
@@ -117,19 +120,12 @@ jobs:
       run: |
         cd Builds/LinuxMakefile
 
-        export CPPFLAGS="\
-          -I$GITHUB_WORKSPACE/JuceLibraryCode \
-          -I$GITHUB_WORKSPACE/juce/modules \
-          -I$GITHUB_WORKSPACE/juce/modules/juce_audio_processors/format_types/VST3_SDK"
-        export CXXFLAGS="\
-          ${{ matrix.compiler_flags }} \
-          -I$GITHUB_WORKSPACE/JuceLibraryCode \
-          -I$GITHUB_WORKSPACE/juce/modules \
-          -I$GITHUB_WORKSPACE/juce/modules/juce_audio_processors/format_types/VST3_SDK"
-
         export PKG_CONFIG_PATH=${{ steps.sdl.outputs.prefix }}/lib/pkgconfig:$PKG_CONFIG_PATH
 
-        make CONFIG=Release JUCE_CPPFLAGS="$CPPFLAGS" JUCE_CXXFLAGS="$CXXFLAGS" -j$(nproc)
+        # CXXFLAGS appends to what the Makefile already sets (AVX2 or empty for Generic).
+        # Do NOT pass JUCE_CPPFLAGS or JUCE_CXXFLAGS — that would override the
+        # Makefile's own include paths and forced-include flags.
+        make CONFIG=Release CXXFLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
 
     - name: Upload VST3 artifact (${{ matrix.name }})
       uses: actions/upload-artifact@v4
