@@ -87,7 +87,7 @@ jobs:
         make SUBTARGET=sd132 SOURCES=src/mame/ensoniq/esq5505.cpp \
              OSD=sdl3 \
              USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 \
-             OPT_FLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
+             OPT_FLAGS="${{ matrix.compiler_flags }} -I${{ steps.sdl.outputs.prefix }}/include" -j$(nproc)
 
     - name: Save MAME cache
       if: steps.cache-mame.outputs.cache-hit != 'true'
