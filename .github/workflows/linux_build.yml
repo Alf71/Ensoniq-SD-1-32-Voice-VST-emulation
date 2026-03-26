@@ -38,7 +38,7 @@ jobs:
     # -------------------------------------------------------------------
     # Build SDL3, SDL3_ttf, SDL3_image from source into ./sdl3-install.
     # Ubuntu 24.04 apt has no SDL3 packages.
-    # We cache the install directory (small: ~10 MB) not /usr/local.
+    # We cache only this small install dir (~10 MB), not /usr/local.
     # -------------------------------------------------------------------
     - name: Restore SDL3 cache
       id: cache-sdl3
@@ -92,12 +92,17 @@ jobs:
         path: sdl3-install
         key: sdl3-ubuntu24-3.2.10
 
-    # Export SDL3 paths for all subsequent steps
+    # Export SDL3 paths once for all subsequent steps via $GITHUB_ENV.
+    # PKG_CONFIG_PATH is how MAME's genie/premake finds SDL3 on Linux.
     - name: Export SDL3 paths
       run: |
-        echo "SDL3_PREFIX=$GITHUB_WORKSPACE/sdl3-install" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=$GITHUB_WORKSPACE/sdl3-install/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/sdl3-install/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        SDL3_PREFIX=$GITHUB_WORKSPACE/sdl3-install
+        echo "SDL3_PREFIX=$SDL3_PREFIX"             >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=$SDL3_PREFIX/lib:$LD_LIBRARY_PATH"           >> $GITHUB_ENV
+        # Verify pkg-config can see SDL3
+        PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig pkg-config --modversion sdl3
+        PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig pkg-config --modversion SDL3_ttf
 
     # -------------------------------------------------------------------
     # MAME cache: restore first, save immediately after compile.
@@ -131,9 +136,11 @@ jobs:
       if: steps.cache-mame.outputs.cache-hit != 'true'
       run: |
         cd mame
+        # PKG_CONFIG_PATH is already set in $GITHUB_ENV from "Export SDL3 paths".
+        # MAME's genie/premake uses pkg-config to find SDL3 headers and libs
+        # on Linux — this is the correct mechanism, not SDL_INSTALL_ROOT.
         make SUBTARGET=sd132 SOURCES=src/mame/ensoniq/esq5505.cpp \
              OSD=sdl3 USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 \
-             SDL_INSTALL_ROOT=${{ env.SDL3_PREFIX }} \
              OPT_FLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
 
     - name: Save MAME cache
@@ -150,13 +157,9 @@ jobs:
 
     - name: Patch .jucer for CI
       run: |
-        # useGlobalPath="1" -> "0": use local MODULEPATH entries
         sed -i 's/useGlobalPath="1"/useGlobalPath="0"/g' EnsoniqSD1-LINUX.jucer
-        # Repoint all MODULEPATH entries to our cloned juce/
         sed -i 's|<MODULEPATH id="\([^"]*\)" path="[^"]*"/>|<MODULEPATH id="\1" path="juce/modules"/>|g' EnsoniqSD1-LINUX.jucer
-        # VST3 only — no Standalone, no AU
         sed -i 's/pluginFormats="[^"]*"/pluginFormats="buildVST3"/' EnsoniqSD1-LINUX.jucer
-        # Remove qtdbg_sdl3 (only needed when USE_QTDEBUG=1)
         sed -i 's/qtdbg_sdl3&#10;//g' EnsoniqSD1-LINUX.jucer
         echo "Patched values:"
         grep -E 'useGlobalPath|MODULEPATH|pluginFormats|externalLibraries' EnsoniqSD1-LINUX.jucer | head -20
@@ -171,8 +174,8 @@ jobs:
     - name: Compile JUCE VST3 (${{ matrix.name }})
       run: |
         cd Builds/LinuxMakefile
-        # SDL3 headers and libs are in sdl3-install — pass to Makefile.
-        # Do NOT pass JUCE_CPPFLAGS or JUCE_CXXFLAGS (drops forced-include).
+        # SDL3 headers needed for compilation; rpath embeds the lib path into the .vst3.
+        # Do NOT override JUCE_CPPFLAGS/JUCE_CXXFLAGS — drops forced-include.
         make CONFIG=Release \
              CXXFLAGS="${{ matrix.compiler_flags }} -I${{ env.SDL3_PREFIX }}/include" \
              LDFLAGS="-L${{ env.SDL3_PREFIX }}/lib -Wl,-rpath,${{ env.SDL3_PREFIX }}/lib" \
