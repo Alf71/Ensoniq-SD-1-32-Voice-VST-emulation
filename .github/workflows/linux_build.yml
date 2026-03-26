@@ -101,8 +101,8 @@ jobs:
     # "No global header file" error) and the MAME header paths
     # (causing "emu.h not found").
     #
-    # The only thing we inject is the AVX2 flag for that matrix variant,
-    # via CXXFLAGS which appends to the Makefile's existing flags.
+    # AVX2 goes into CXXFLAGS (appends). SDL3 library path goes into
+    # LDFLAGS so the linker finds the custom-prefix SDL3 install.
     # -------------------------------------------------------------------
     - name: Build Projucer
       run: |
@@ -120,12 +120,18 @@ jobs:
       run: |
         cd Builds/LinuxMakefile
 
+        # SDL3 is installed into a custom prefix by setup-sdl — tell pkg-config
+        # and the linker where to find it.
         export PKG_CONFIG_PATH=${{ steps.sdl.outputs.prefix }}/lib/pkgconfig:$PKG_CONFIG_PATH
+        export LDFLAGS="-L${{ steps.sdl.outputs.prefix }}/lib"
 
-        # CXXFLAGS appends to what the Makefile already sets (AVX2 or empty for Generic).
-        # Do NOT pass JUCE_CPPFLAGS or JUCE_CXXFLAGS — that would override the
-        # Makefile's own include paths and forced-include flags.
-        make CONFIG=Release CXXFLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
+        # CXXFLAGS appends the AVX2 flag (empty for Generic).
+        # Do NOT pass JUCE_CPPFLAGS or JUCE_CXXFLAGS — overriding those
+        # drops the Makefile's forced-include and MAME header paths.
+        make CONFIG=Release \
+             CXXFLAGS="${{ matrix.compiler_flags }}" \
+             LDFLAGS="$LDFLAGS" \
+             -j$(nproc)
 
     - name: Upload VST3 artifact (${{ matrix.name }})
       uses: actions/upload-artifact@v4
