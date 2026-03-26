@@ -102,7 +102,7 @@ jobs:
         echo "LD_LIBRARY_PATH=$SDL3_PREFIX/lib:$LD_LIBRARY_PATH"           >> $GITHUB_ENV
         # Verify pkg-config can see SDL3
         PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig pkg-config --modversion sdl3
-        PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig pkg-config --modversion SDL3_ttf
+        PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig pkg-config --modversion sdl3-ttf
 
     # -------------------------------------------------------------------
     # MAME cache: restore first, save immediately after compile.
