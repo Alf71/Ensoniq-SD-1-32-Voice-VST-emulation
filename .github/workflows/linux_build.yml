@@ -7,10 +7,91 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  SDL3_VERSION: "3.2.30"
+  SDL3_TTF_VERSION: "3.2.2"
+  SDL3_IMAGE_VERSION: "3.2.4"
 
 jobs:
+
+  # -------------------------------------------------------------------
+  # Job 1: Build SDL3 once and cache it.
+  # Runs independently of the matrix so both build variants share one
+  # SDL3 build and there is no cache key collision between parallel jobs.
+  # -------------------------------------------------------------------
+  build-sdl3:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Install cmake and SDL3 build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake \
+             libharfbuzz-dev libpng-dev libjpeg-dev libfreetype6-dev \
+             pkg-config
+
+    - name: Restore SDL3 cache
+      id: cache-sdl3
+      uses: actions/cache/restore@v4
+      with:
+        path: sdl3-install
+        key: sdl3-ubuntu24-${{ env.SDL3_VERSION }}
+
+    - name: Build SDL3 from source
+      if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      run: |
+        git clone --depth 1 --branch release-${{ env.SDL3_VERSION }} \
+          https://github.com/libsdl-org/SDL.git sdl3-src
+        cmake -S sdl3-src -B sdl3-build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/sdl3-install \
+              -DSDL_SHARED=ON -DSDL_STATIC=OFF
+        cmake --build sdl3-build -j$(nproc)
+        cmake --install sdl3-build
+
+    - name: Build SDL3_ttf from source
+      if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      run: |
+        git clone --depth 1 --branch release-${{ env.SDL3_TTF_VERSION }} \
+          https://github.com/libsdl-org/SDL_ttf.git sdl3_ttf-src
+        cmake -S sdl3_ttf-src -B sdl3_ttf-build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/sdl3-install \
+              -DSDLTTF_SHARED=ON -DSDLTTF_STATIC=OFF \
+              -DSDLTTF_VENDORED=OFF
+        cmake --build sdl3_ttf-build -j$(nproc)
+        cmake --install sdl3_ttf-build
+
+    - name: Build SDL3_image from source
+      if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      run: |
+        git clone --depth 1 --branch release-${{ env.SDL3_IMAGE_VERSION }} \
+          https://github.com/libsdl-org/SDL_image.git sdl3_image-src
+        cmake -S sdl3_image-src -B sdl3_image-build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/sdl3-install \
+              -DSDLIMAGE_SHARED=ON -DSDLIMAGE_STATIC=OFF \
+              -DSDLIMAGE_VENDORED=OFF
+        cmake --build sdl3_image-build -j$(nproc)
+        cmake --install sdl3_image-build
+
+    - name: Save SDL3 cache
+      if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: sdl3-install
+        key: sdl3-ubuntu24-${{ env.SDL3_VERSION }}
+
+    - name: Verify SDL3 pkg-config
+      run: |
+        PKG_CONFIG_PATH=$GITHUB_WORKSPACE/sdl3-install/lib/pkgconfig \
+          pkg-config --modversion sdl3 sdl3-ttf sdl3-image
+
+  # -------------------------------------------------------------------
+  # Job 2: Build MAME + JUCE VST3 (matrix: Generic and AVX2).
+  # Depends on build-sdl3 so SDL3 cache is always warm before this runs.
+  # -------------------------------------------------------------------
   build-linux-vst3:
     runs-on: ubuntu-24.04
+    needs: build-sdl3
 
     strategy:
       matrix:
@@ -35,78 +116,21 @@ jobs:
              libharfbuzz-dev libpng-dev libjpeg-dev \
              qtbase5-dev qt5-qmake qtbase5-dev-tools
 
-    # -------------------------------------------------------------------
-    # Build SDL3, SDL3_ttf, SDL3_image from source into ./sdl3-install.
-    # Ubuntu 24.04 apt has no SDL3 packages.
-    # We cache only this small install dir (~10 MB), not /usr/local.
-    # -------------------------------------------------------------------
     - name: Restore SDL3 cache
-      id: cache-sdl3
       uses: actions/cache/restore@v4
       with:
         path: sdl3-install
-        key: sdl3-ubuntu24-3.2.30
+        key: sdl3-ubuntu24-${{ env.SDL3_VERSION }}
 
-    - name: Build SDL3 from source
-      if: steps.cache-sdl3.outputs.cache-hit != 'true'
-      run: |
-        git clone --depth 1 --branch release-3.2.30 \
-          https://github.com/libsdl-org/SDL.git sdl3-src
-        cmake -S sdl3-src -B sdl3-build \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/sdl3-install \
-              -DSDL_SHARED=ON -DSDL_STATIC=OFF
-        cmake --build sdl3-build -j$(nproc)
-        cmake --install sdl3-build
-
-    - name: Build SDL3_ttf from source
-      if: steps.cache-sdl3.outputs.cache-hit != 'true'
-      run: |
-        git clone --depth 1 --branch release-3.2.2 \
-          https://github.com/libsdl-org/SDL_ttf.git sdl3_ttf-src
-        cmake -S sdl3_ttf-src -B sdl3_ttf-build \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/sdl3-install \
-              -DSDLTTF_SHARED=ON -DSDLTTF_STATIC=OFF \
-              -DSDLTTF_VENDORED=OFF
-        cmake --build sdl3_ttf-build -j$(nproc)
-        cmake --install sdl3_ttf-build
-
-    - name: Build SDL3_image from source
-      if: steps.cache-sdl3.outputs.cache-hit != 'true'
-      run: |
-        git clone --depth 1 --branch release-3.2.4 \
-          https://github.com/libsdl-org/SDL_image.git sdl3_image-src
-        cmake -S sdl3_image-src -B sdl3_image-build \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/sdl3-install \
-              -DSDLIMAGE_SHARED=ON -DSDLIMAGE_STATIC=OFF \
-              -DSDLIMAGE_VENDORED=OFF
-        cmake --build sdl3_image-build -j$(nproc)
-        cmake --install sdl3_image-build
-
-    - name: Save SDL3 cache
-      if: steps.cache-sdl3.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: sdl3-install
-        key: sdl3-ubuntu24-3.2.30
-
-    # Export SDL3 paths once for all subsequent steps via $GITHUB_ENV.
-    # PKG_CONFIG_PATH is how MAME's genie/premake finds SDL3 on Linux.
     - name: Export SDL3 paths
       run: |
         SDL3_PREFIX=$GITHUB_WORKSPACE/sdl3-install
-        echo "SDL3_PREFIX=$SDL3_PREFIX"             >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=$SDL3_PREFIX/lib:$LD_LIBRARY_PATH"           >> $GITHUB_ENV
-        # Verify pkg-config can see SDL3
-        PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig pkg-config --modversion sdl3
-        PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig pkg-config --modversion SDL3_ttf
+        echo "SDL3_PREFIX=$SDL3_PREFIX"                                        >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=$SDL3_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"    >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=$SDL3_PREFIX/lib:$LD_LIBRARY_PATH"              >> $GITHUB_ENV
+        pkg-config --variable=prefix sdl3
+        pkg-config --variable=prefix sdl3-ttf
 
-    # -------------------------------------------------------------------
-    # MAME cache: restore first, save immediately after compile
-    # -------------------------------------------------------------------
     - name: Restore MAME cache
       id: cache-mame
       uses: actions/cache/restore@v4
@@ -136,9 +160,6 @@ jobs:
       if: steps.cache-mame.outputs.cache-hit != 'true'
       run: |
         cd mame
-        # PKG_CONFIG_PATH is already set in $GITHUB_ENV from "Export SDL3 paths".
-        # MAME's genie/premake uses pkg-config to find SDL3 headers and libs
-        # on Linux — this is the correct mechanism, not SDL_INSTALL_ROOT.
         make SUBTARGET=sd132 SOURCES=src/mame/ensoniq/esq5505.cpp \
              OSD=sdl3 USE_QTDEBUG=0 REGENIE=1 NO_USE_BGFX=1 \
              OPT_FLAGS="${{ matrix.compiler_flags }}" -j$(nproc)
@@ -174,8 +195,6 @@ jobs:
     - name: Compile JUCE VST3 (${{ matrix.name }})
       run: |
         cd Builds/LinuxMakefile
-        # SDL3 headers needed for compilation; rpath embeds the lib path into the .vst3.
-        # Do NOT override JUCE_CPPFLAGS/JUCE_CXXFLAGS — drops forced-include.
         make CONFIG=Release \
              CXXFLAGS="${{ matrix.compiler_flags }} -I${{ env.SDL3_PREFIX }}/include" \
              LDFLAGS="-L${{ env.SDL3_PREFIX }}/lib -Wl,-rpath,${{ env.SDL3_PREFIX }}/lib" \
